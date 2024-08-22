@@ -1,0 +1,170 @@
+import { Button, VerticalBox, HorizontalBox } from "std-widgets.slint";
+
+export component AppWindow inherits Window {
+    in-out property <int> current_action: 0;
+    in-out property <string> contextual_text: 0;
+    
+    in-out property <int> counter: 42;
+
+    in-out property <int> mouse_x: 42;
+    in-out property <int> mouse_y: 42;
+
+    in_out property <image> map;
+
+    callback request-increase-value();
+    callback request-decrease-value();
+    callback update_image();
+
+    callback image_click();
+
+    VerticalBox {
+        HorizontalBox {
+
+            Button {
+                text: "Point";
+                clicked => {
+                    root.contextual_text = "Click on a point to draw a point";
+                    root.current_action = 3;
+                }
+            }
+
+            Button {
+                text: "Médiatrice";
+                clicked => {
+                    root.request-decrease-value();
+                }
+            }
+
+            Button {
+                text: "Cercle-centre-rayon";
+                clicked => {
+                    root.request-increase-value();
+                }
+            }
+
+            Button {
+                text: "Cercle-centre-point";
+                clicked => {
+                    root.contextual_text = "Click on the circle center";
+                    root.current_action = 12;
+                }
+            }
+
+            Button {
+                text: "Cercle-deux-points";
+                clicked => {
+                    root.request-decrease-value();
+                }
+            }
+
+            Button {
+                text: "Cercle-trois-points";
+                clicked => {
+                    root.request-decrease-value();
+                }
+            }
+
+            Button {
+                text: "Segment";
+                clicked => {
+                    root.contextual_text = "Click on the first segment point";
+                    root.current_action = 4;
+                }
+            }
+
+            Button {
+                text: "Line";
+                clicked => {
+                    root.contextual_text = "Click on the first line point";
+                    root.current_action = 8;
+                }
+            }
+
+            Button {
+                text: "Half Line";
+                clicked => {
+                    root.contextual_text = "Click on the end point";
+                    root.current_action = 10;
+                }
+            }
+
+            Button {
+                text: "Perpendiculaire";
+                clicked => {
+                    root.request-decrease-value();
+                }
+            }
+
+            Button {
+                text: "Parallèle";
+                clicked => {
+                    root.request-decrease-value();
+                }
+            }
+
+            Button {
+                text: "Verticale";
+                clicked => {
+                    root.contextual_text = "Click on a point to draw a vertical line";
+                    root.current_action = 1;
+                }
+            }
+
+            Button {
+                text: "Horizontale";
+                clicked => {
+                    root.contextual_text = "Click on a point to draw an horizontal line";
+                    root.current_action = 2;
+                }
+            }
+
+            Button {
+                text: "Angle";
+                clicked => {
+                    root.contextual_text = "Click on the first line";
+                    root.current_action = 6;
+                }
+            }
+
+            Button {
+                text: "Delete";
+                clicked => {
+                    root.contextual_text = "Click on the item to delete";
+                    root.current_action = 14;
+                }
+            }
+
+        }
+
+        Text {
+            text: "Counter: \{root.counter}";
+        }
+
+        canva := Image {
+            source : map;
+            width: 640px;
+            height: 480px;
+            
+            area := TouchArea {
+                width: parent.width;
+                height: parent.height;
+                clicked => {
+                    root.mouse_x = self.pressed-x/1px;
+                    root.mouse_y = self.pressed-y/1px;
+                    root.image_click();
+                }
+            }
+        }
+
+        Button {
+            text: "Increase value";
+            clicked => {
+                root.request-increase-value();
+            }
+        }
+
+        Text {
+            text: contextual_text;
+        }
+    }
+}
