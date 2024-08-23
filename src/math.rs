@@ -1,6 +1,4 @@
-use std::cmp::min;
-
-use crate::rendering::{Drawable, DrawableType, Point};
+use crate::rendering::{Drawable, DrawableType, Point, Color};
 
 /// Calculate the distance between two points
 ///
@@ -397,5 +395,70 @@ pub fn parallel_line(point: Point, line: Drawable) -> Drawable {
         point2: Point { x: x2, y: y2 },
         color: line.color,
         width: line.width,
+    }
+}
+
+/// Find the coordinates of a line perpendicular to a given line and passing through a specific point
+/// 
+/// # Arguments
+/// 
+/// * `point` - The specific point
+/// * `line` - The given line
+/// 
+/// # Returns
+/// 
+/// The coordinates of the line perpendicular to the given line and passing through the specific point
+pub fn perpendicular_line(point: Point, line: Drawable) -> Drawable {
+    if line.point1.x == line.point2.x {
+        return Drawable {
+            id: 0,
+            object_type: DrawableType::Line,
+            point1: Point { x: point.x, y: 0 },
+            point2: Point { x: point.x, y: 100 },
+            color: line.color,
+            width: line.width,
+        };
+    }
+
+    let slope = (line.point2.y - line.point1.y) as f32 / (line.point2.x - line.point1.x) as f32;
+    let perpendicular_slope = -1. / slope;
+    let intercept = point.y as f32 - perpendicular_slope * point.x as f32;
+
+    let x1 = 0;
+    let y1 = (perpendicular_slope * x1 as f32 + intercept) as i32;
+    let x2 = 1000;
+    let y2 = (perpendicular_slope * x2 as f32 + intercept) as i32;
+
+    Drawable {
+        id: 0,
+        object_type: DrawableType::Line,
+        point1: Point { x: x1, y: y1 },
+        point2: Point { x: x2, y: y2 },
+        color: Color { r: 0, g: 0, b: 0 },
+        width: line.width,
+    }
+}
+
+/// Find the median line between two points
+/// 
+/// # Arguments
+/// 
+/// * `p1` - The first point
+/// * `p2` - The second point
+/// 
+/// # Returns
+/// 
+/// The median line between the two points
+pub fn median_line(p1: Point, p2: Point) -> Drawable {
+    let x = (p1.x + p2.x) / 2;
+    let y = (p1.y + p2.y) / 2;
+
+    Drawable {
+        id: 0,
+        object_type: DrawableType::Line,
+        point1: Point { x: x, y: y },
+        point2: Point { x: x + (p2.y - p1.y), y: y + (p1.x - p2.x) },
+        color: Color { r: 0, g: 0, b: 0 },
+        width: 1.0,
     }
 }

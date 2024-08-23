@@ -66,7 +66,12 @@ impl Renderer {
         }
     }
 
-    pub fn add_drawable(
+    pub fn add_drawable(&mut self, mut drawable: Drawable) {
+        drawable.id = self.entity_id_generator.get_id();
+        self.drawables.push(drawable);
+    }
+
+    pub fn add_drawable_by_values(
         &mut self,
         object_type: DrawableType,
         point1: Point,

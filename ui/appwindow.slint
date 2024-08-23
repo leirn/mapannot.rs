@@ -44,9 +44,10 @@ export component AppWindow inherits Window {
                 }
 
                 Button {
-                    text: "Médiatrice";
+                    text: "Two points median";
                     clicked => {
-                        root.contextual_text = "Not implemented yet";
+                        root.contextual_text = "Click on the first point";
+                        root.current_action = 22;
                     }
                 }
 
@@ -124,14 +125,15 @@ export component AppWindow inherits Window {
                 }
 
                 Button {
-                    text: "Perpendiculaire";
+                    text: "Perpendicular";
                     clicked => {
-                        root.contextual_text = "Not implemented yet";
+                        root.contextual_text = "Click on a point the perpendicular line goes through";
+                        root.current_action = 24;
                     }
                 }
 
                 Button {
-                    text: "Parallèle";
+                    text: "Parallel";
                     clicked => {
                         root.contextual_text = "Click on a point the parallel line goes through";
                         root.current_action = 20;

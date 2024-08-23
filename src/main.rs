@@ -48,7 +48,7 @@ fn main() -> Result<(), slint::PlatformError> {
                 }
                 // Vertical line
                 1 => {
-                    renderer.add_drawable(
+                    renderer.add_drawable_by_values(
                         DrawableType::Line,
                         Point { x: x, y: 0 },
                         Point { x: x, y: 480 },
@@ -63,7 +63,7 @@ fn main() -> Result<(), slint::PlatformError> {
                 }
                 // Horizontal line
                 2 => {
-                    renderer.add_drawable(
+                    renderer.add_drawable_by_values(
                         DrawableType::Line,
                         Point { x: 0, y: y },
                         Point { x: 640, y: y },
@@ -78,7 +78,7 @@ fn main() -> Result<(), slint::PlatformError> {
                 }
                 // Point
                 3 => {
-                    renderer.add_drawable(
+                    renderer.add_drawable_by_values(
                         DrawableType::Point,
                         Point { x: x, y: y },
                         Point { x: 0, y: 0 },
@@ -99,7 +99,7 @@ fn main() -> Result<(), slint::PlatformError> {
                 }
                 // Second segment point
                 5 => {
-                    renderer.add_drawable(
+                    renderer.add_drawable_by_values(
                         DrawableType::Segment,
                         standing_point,
                         Point { x: x, y: y },
@@ -154,7 +154,7 @@ fn main() -> Result<(), slint::PlatformError> {
                 // Second line point
                 9 => {
                     next_action = 0;
-                    renderer.add_drawable(
+                    renderer.add_drawable_by_values(
                         DrawableType::Line,
                         standing_point,
                         Point { x: x, y: y },
@@ -176,7 +176,7 @@ fn main() -> Result<(), slint::PlatformError> {
                 // Second half line point
                 11 => {
                     next_action = 0;
-                    renderer.add_drawable(
+                    renderer.add_drawable_by_values(
                         DrawableType::HalfLine,
                         standing_point,
                         Point { x: x, y: y },
@@ -198,7 +198,7 @@ fn main() -> Result<(), slint::PlatformError> {
                 // Second circle point
                 13 => {
                     next_action = 0;
-                    renderer.add_drawable(
+                    renderer.add_drawable_by_values(
                         DrawableType::Circle,
                         standing_point,
                         Point { x: x, y: y },
@@ -282,7 +282,7 @@ fn main() -> Result<(), slint::PlatformError> {
                 20 => {
                     standing_point = Point { x: x, y: y };
                     next_action = 21;
-                    "Click on any point on the circle".to_string()
+                    "Click on a line".to_string()
                 }
                 // Line of reference for the parallel line
                 21 => {
@@ -290,19 +290,59 @@ fn main() -> Result<(), slint::PlatformError> {
                     let closest_line = math::closest_line(Point { x: x, y: y }, renderer.get_drawables());
                     match closest_line {
                         Some(closest_line) => {
-                            let drawable = math::parallel_line(standing_point, closest_line);
-                            renderer.add_drawable(
-                                DrawableType::Line,
-                                drawable.point1,
-                                drawable.point2,
-                                Color {
-                                    r: red,
-                                    g: green,
-                                    b: blue,
-                                },
-                                width,
-                            );
+                            let mut drawable = math::parallel_line(standing_point, closest_line);
+                            drawable.color = Color {
+                                r: red,
+                                g: green,
+                                b: blue,
+                            };
+                            drawable.width = width;
+                            renderer.add_drawable(drawable);
                             "Parallel line added".to_string()
+                        }
+                        None => "No line found".to_string(),
+                    }
+                }
+                // First point for median
+                22 => {
+                    standing_point = Point { x: x, y: y };
+                    next_action = 23;
+                    "Click on the second point".to_string()
+                }
+                // Second point for median
+                23 => {
+                    next_action = 0;
+                    let mut drawable = math::median_line(standing_point, Point { x: x, y: y });
+                    drawable.color = Color {
+                        r: red,
+                        g: green,
+                        b: blue,
+                    };
+                    drawable.width = width;
+                    renderer.add_drawable(drawable);
+                    "Median line added".to_string()
+                }
+                // Point the perpendicular line will go through
+                24 => {
+                    standing_point = Point { x: x, y: y };
+                    next_action = 25;
+                    "Click on a line".to_string()
+                }
+                // Line of reference for the perpendicular line
+                25 => {
+                    next_action = 0;
+                    let closest_line = math::closest_line(Point { x: x, y: y }, renderer.get_drawables());
+                    match closest_line {
+                        Some(closest_line) => {
+                            let mut drawable = math::perpendicular_line(standing_point, closest_line);
+                            drawable.color = Color {
+                                r: red,
+                                g: green,
+                                b: blue,
+                            };
+                            drawable.width = width;
+                            renderer.add_drawable(drawable);
+                            "Perpendicular line added".to_string()
                         }
                         None => "No line found".to_string(),
                     }
