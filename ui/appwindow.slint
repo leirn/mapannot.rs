@@ -1,4 +1,4 @@
-import { Button, VerticalBox, HorizontalBox } from "std-widgets.slint";
+import { Button, VerticalBox, HorizontalBox, StandardListView, Slider, LineEdit, StandardButton } from "std-widgets.slint";
 
 export component AppWindow inherits Window {
     in-out property <int> current_action: 0;
@@ -8,8 +8,19 @@ export component AppWindow inherits Window {
 
     in-out property <int> mouse_x: 42;
     in-out property <int> mouse_y: 42;
+    
+    in-out property <float> stroke_red: 42;
+    in-out property <float> stroke_green: 185;
+    in-out property <float> stroke_blue: 37;
+    in-out property <brush> stroke_brush: rgb(root.stroke_red, root.stroke_green, root.stroke_blue);
+    in-out property <float> stroke_width: 4;
 
-    in_out property <image> map;
+    in-out property <image> map;
+
+    in-out property <[StandardListViewItem]> item_list: [ { text: "Blue"}, { text: "Red" }, { text: "Green" },
+                { text: "Yellow" }, { text: "Black"}, { text: "White"},
+                { text: "Magenta" }, { text: "Cyan" },
+            ];
 
     callback request-increase-value();
     callback request-decrease-value();
@@ -134,26 +145,137 @@ export component AppWindow inherits Window {
                 }
             }
 
+            Button {
+                text: "Color";
+                clicked => {
+                    color_popup.show();
+                }
+            }
+
+            color_popup := PopupWindow {
+                width: 250px;
+                height: 150px;
+                close-on-click: false;
+                
+                Rectangle {
+                    width : parent.width;
+                    height : parent.height;
+                    background: grey;
+                    border_radius: 3px;
+                    border_width: 1px;
+                    border_color: black;
+                    clip: true;
+                }
+                VerticalBox {
+                    HorizontalBox {
+                        GridLayout  {
+                            spacing: 5px;
+                            Row {
+                                Text {
+                                    width: 40px;
+                                    text: "Red";
+                                }
+                                Slider {
+                                    minimum: 0;
+                                    maximum: 255;
+                                    width: 150px;
+                                    value: root.stroke_red;
+                                    changed(value) => {
+                                        root.stroke_red = value;
+                                    }
+                                }
+                            }
+                            Row {
+                                Text {
+                                    width: 40px;
+                                    text: "Green";
+                                }
+                                Slider {
+                                    minimum: 0;
+                                    maximum: 255;
+                                    width: 150px;
+                                    value: root.stroke_green;
+                                    changed(value) => {
+                                        root.stroke_green = value;
+                                    }
+                                }
+                            }
+                            Row {
+                                Text {
+                                    width: 40px;
+                                    text: "Blue";
+                                }
+                                Slider {
+                                    minimum: 0;
+                                    maximum: 255;
+                                    width: 150px;
+                                    value: root.stroke_blue;
+                                    changed(value) => {
+                                        root.stroke_blue = value;
+                                    }
+                                }
+                            }
+                        }
+                        color_display := Rectangle {
+                            width: 50px;
+                            height: 50px;
+                            background: root.stroke_brush;
+                        }
+                    }
+                    HorizontalBox  {
+                        Text {
+                            width: 40px;
+                            text: "Width";
+                        }
+                        LineEdit {
+                            width: 40px;
+                            text: root.stroke_width;
+                        }
+                        Text {
+                            width: 20px;
+                            text: "px";
+                        }
+                    }    
+                    HorizontalBox{
+                        StandardButton { 
+                            kind: ok; 
+                            clicked => {
+                                color_popup.close();
+                            } 
+                        }
+                    }
+                }
+
+
+            }
+
         }
 
         Text {
             text: "Counter: \{root.counter}";
         }
-
-        canva := Image {
-            source : map;
-            width: 640px;
-            height: 480px;
-            
-            area := TouchArea {
-                width: parent.width;
-                height: parent.height;
-                clicked => {
-                    root.mouse_x = self.pressed-x/1px;
-                    root.mouse_y = self.pressed-y/1px;
-                    root.image_click();
+        HorizontalBox {
+            canva := Image {
+                source : map;
+                width: 640px;
+                height: 480px;
+                
+                area := TouchArea {
+                    width: parent.width;
+                    height: parent.height;
+                    clicked => {
+                        root.mouse_x = self.pressed-x/1px;
+                        root.mouse_y = self.pressed-y/1px;
+                        root.image_click();
+                    }
                 }
             }
+
+            StandardListView {
+            width: 150px;
+            height: 480px;
+            model: item_list;
+    }
         }
 
         Button {

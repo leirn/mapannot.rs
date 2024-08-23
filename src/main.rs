@@ -1,7 +1,7 @@
 mod math;
 mod rendering;
 
-use slint::SharedString;
+use slint::{SharedString, VecModel};
 
 use rendering::{render_image, Color, Drawable, DrawableType, Point};
 
@@ -97,6 +97,10 @@ fn main() -> Result<(), slint::PlatformError> {
         move || {
             let x = ui.get_mouse_x();
             let y = ui.get_mouse_y();
+            let red = ui.get_stroke_red().round() as u8;
+            let green = ui.get_stroke_green().round() as u8;
+            let blue = ui.get_stroke_blue().round() as u8;
+            let width = ui.get_stroke_width();
             log::debug!("Mouse position = {x}, {y}");
 
             log::debug!("Current action: {}", ui.get_current_action());
@@ -120,9 +124,13 @@ fn main() -> Result<(), slint::PlatformError> {
                         id: id_generator.get_id(),
                         point1: Point { x: x, y: 0 },
                         point2: Point { x: x, y: 480 },
-                        color: current_color.clone(),
+                        color: Color {
+                            r: red,
+                            g: green,
+                            b: blue,
+                        },
                         object_type: DrawableType::Line,
-                        width: 2.5,
+                        width: width,
                     });
                     "Vertical line added".to_string()
                 }
@@ -132,9 +140,13 @@ fn main() -> Result<(), slint::PlatformError> {
                         id: id_generator.get_id(),
                         point1: Point { x: 0, y: y },
                         point2: Point { x: 640, y: y },
-                        color: current_color.clone(),
+                        color: Color {
+                            r: red,
+                            g: green,
+                            b: blue,
+                        },
                         object_type: DrawableType::Line,
-                        width: 2.5,
+                        width: width,
                     });
                     "Horizontal line added".to_string()
                 }
@@ -144,9 +156,13 @@ fn main() -> Result<(), slint::PlatformError> {
                         id: id_generator.get_id(),
                         point1: Point { x: x, y: y },
                         point2: Point { x: 0, y: 0 },
-                        color: current_color.clone(),
+                        color: Color {
+                            r: red,
+                            g: green,
+                            b: blue,
+                        },
                         object_type: DrawableType::Point,
-                        width: 2.5,
+                        width: width,
                     });
                     "Point added".to_string()
                 }
@@ -162,9 +178,13 @@ fn main() -> Result<(), slint::PlatformError> {
                         id: id_generator.get_id(),
                         point1: standing_point,
                         point2: Point { x: x, y: y },
-                        color: current_color.clone(),
+                        color: Color {
+                            r: red,
+                            g: green,
+                            b: blue,
+                        },
                         object_type: DrawableType::Segment,
-                        width: 2.5,
+                        width: width,
                     });
                     "Segment added".to_string()
                 }
@@ -187,7 +207,13 @@ fn main() -> Result<(), slint::PlatformError> {
                         Some(line) => {
                             let line1 = standing_drawable.unwrap();
                             let angle = math::angle_between(line1, line);
-                            let output: String = format!("The angle between {} and {} is {}° / {}°", line1.id, line.id, angle.to_degrees().abs(), 180. - angle.to_degrees().abs());
+                            let output: String = format!(
+                                "The angle between {} and {} is {}° / {}°",
+                                line1.id,
+                                line.id,
+                                angle.to_degrees().abs(),
+                                180. - angle.to_degrees().abs()
+                            );
                             output
                         }
                         None => "No line found".to_string(),
@@ -205,9 +231,13 @@ fn main() -> Result<(), slint::PlatformError> {
                         id: id_generator.get_id(),
                         point1: standing_point,
                         point2: Point { x: x, y: y },
-                        color: current_color.clone(),
+                        color: Color {
+                            r: red,
+                            g: green,
+                            b: blue,
+                        },
                         object_type: DrawableType::Line,
-                        width: 2.5,
+                        width: width,
                     });
                     "Line added".to_string()
                 }
@@ -223,9 +253,13 @@ fn main() -> Result<(), slint::PlatformError> {
                         id: id_generator.get_id(),
                         point1: standing_point,
                         point2: Point { x: x, y: y },
-                        color: current_color.clone(),
+                        color: Color {
+                            r: red,
+                            g: green,
+                            b: blue,
+                        },
                         object_type: DrawableType::DemiDroite,
-                        width: 2.5,
+                        width: width,
                     });
                     "Half line added".to_string()
                 }
@@ -241,9 +275,13 @@ fn main() -> Result<(), slint::PlatformError> {
                         id: id_generator.get_id(),
                         point1: standing_point,
                         point2: Point { x: x, y: y },
-                        color: current_color.clone(),
+                        color: Color {
+                            r: red,
+                            g: green,
+                            b: blue,
+                        },
                         object_type: DrawableType::Circle,
-                        width: 2.5,
+                        width: width,
                     });
                     "Circle added".to_string()
                 }
@@ -267,6 +305,15 @@ fn main() -> Result<(), slint::PlatformError> {
             ui.set_contextual_text(SharedString::from(contextual_text.as_str()));
             ui.set_map(render_image(&d));
             ui.set_current_action(next_action);
+            let mut my_vec = vec![];
+
+            for dd in d {
+                let s = format!("{} - {:?}", dd.id, dd.object_type);
+                let s = slint::StandardListViewItem::from(slint::SharedString::from(s.as_str()));
+                my_vec.push(s);
+            }
+            let model = slint::ModelRc::new(VecModel::from(my_vec));
+            ui.set_item_list(model);
         }
     });
 
