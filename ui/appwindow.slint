@@ -1,292 +1,357 @@
 import { Button, VerticalBox, HorizontalBox, StandardListView, Slider, LineEdit, StandardButton } from "std-widgets.slint";
 
 export component AppWindow inherits Window {
+    title: "Map Annontation in Rust";
     in-out property <int> current_action: 0;
-    in-out property <string> contextual_text: 0;
-    
+    in-out property <string> contextual_text: "Welcome";
     in-out property <int> counter: 42;
-
     in-out property <int> mouse_x: 42;
     in-out property <int> mouse_y: 42;
-    
     in-out property <float> stroke_red: 42;
     in-out property <float> stroke_green: 185;
     in-out property <float> stroke_blue: 37;
     in-out property <brush> stroke_brush: rgb(root.stroke_red, root.stroke_green, root.stroke_blue);
     in-out property <float> stroke_width: 4;
-
     in-out property <image> map;
-
-    in-out property <[StandardListViewItem]> item_list: [ { text: "Blue"}, { text: "Red" }, { text: "Green" },
-                { text: "Yellow" }, { text: "Black"}, { text: "White"},
-                { text: "Magenta" }, { text: "Cyan" },
-            ];
-
+    in-out property <[StandardListViewItem]> item_list: [
+        { text: "Blue" },
+        { text: "Red" },
+        { text: "Green" },
+        { text: "Yellow" },
+        { text: "Black" },
+        { text: "White" },
+        { text: "Magenta" },
+        { text: "Cyan" },
+    ];
     callback request-increase-value();
     callback request-decrease-value();
     callback update_image();
-
     callback image_click();
-
     VerticalBox {
+        height: 100%;
         HorizontalBox {
-
-            Button {
-                text: "Point";
-                clicked => {
-                    root.contextual_text = "Click on a point to draw a point";
-                    root.current_action = 3;
+            vertical-stretch: 1;
+            preferred-height: 100%;
+            VerticalBox {
+                vertical-stretch: 0;
+                width: 180px;
+                // Left menu bar
+                point := Button {
+                    text: "Point";
+                    clicked => {
+                        root.contextual_text = "Click on a point to draw a point";
+                        root.current_action = 3;
+                    }
                 }
-            }
 
-            Button {
-                text: "Médiatrice";
-                clicked => {
-                    root.request-decrease-value();
+                Button {
+                    text: "Médiatrice";
+                    clicked => {
+                        root.request-decrease-value();
+                    }
                 }
-            }
 
-            Button {
-                text: "Cercle-centre-rayon";
-                clicked => {
-                    root.request-increase-value();
-                }
-            }
-
-            Button {
-                text: "Cercle-centre-point";
-                clicked => {
-                    root.contextual_text = "Click on the circle center";
-                    root.current_action = 12;
-                }
-            }
-
-            Button {
-                text: "Cercle-deux-points";
-                clicked => {
-                    root.request-decrease-value();
-                }
-            }
-
-            Button {
-                text: "Cercle-trois-points";
-                clicked => {
-                    root.request-decrease-value();
-                }
-            }
-
-            Button {
-                text: "Segment";
-                clicked => {
-                    root.contextual_text = "Click on the first segment point";
-                    root.current_action = 4;
-                }
-            }
-
-            Button {
-                text: "Line";
-                clicked => {
-                    root.contextual_text = "Click on the first line point";
-                    root.current_action = 8;
-                }
-            }
-
-            Button {
-                text: "Half Line";
-                clicked => {
-                    root.contextual_text = "Click on the end point";
-                    root.current_action = 10;
-                }
-            }
-
-            Button {
-                text: "Perpendiculaire";
-                clicked => {
-                    root.request-decrease-value();
-                }
-            }
-
-            Button {
-                text: "Parallèle";
-                clicked => {
-                    root.request-decrease-value();
-                }
-            }
-
-            Button {
-                text: "Verticale";
-                clicked => {
-                    root.contextual_text = "Click on a point to draw a vertical line";
-                    root.current_action = 1;
-                }
-            }
-
-            Button {
-                text: "Horizontale";
-                clicked => {
-                    root.contextual_text = "Click on a point to draw an horizontal line";
-                    root.current_action = 2;
-                }
-            }
-
-            Button {
-                text: "Angle";
-                clicked => {
-                    root.contextual_text = "Click on the first line";
-                    root.current_action = 6;
-                }
-            }
-
-            Button {
-                text: "Delete";
-                clicked => {
-                    root.contextual_text = "Click on the item to delete";
-                    root.current_action = 14;
-                }
-            }
-
-            Button {
-                text: "Color";
-                clicked => {
-                    color_popup.show();
-                }
-            }
-
-            color_popup := PopupWindow {
-                width: 250px;
-                height: 150px;
-                close-on-click: false;
                 
                 Rectangle {
-                    width : parent.width;
-                    height : parent.height;
-                    background: grey;
-                    border_radius: 3px;
-                    border_width: 1px;
-                    border_color: black;
-                    clip: true;
+                    width: point.width;
+                    height: 1px;
+                    background: white;
                 }
-                VerticalBox {
-                    HorizontalBox {
-                        GridLayout  {
-                            spacing: 5px;
-                            Row {
-                                Text {
-                                    width: 40px;
-                                    text: "Red";
-                                }
-                                Slider {
-                                    minimum: 0;
-                                    maximum: 255;
-                                    width: 150px;
-                                    value: root.stroke_red;
-                                    changed(value) => {
-                                        root.stroke_red = value;
-                                    }
-                                }
-                            }
-                            Row {
-                                Text {
-                                    width: 40px;
-                                    text: "Green";
-                                }
-                                Slider {
-                                    minimum: 0;
-                                    maximum: 255;
-                                    width: 150px;
-                                    value: root.stroke_green;
-                                    changed(value) => {
-                                        root.stroke_green = value;
-                                    }
-                                }
-                            }
-                            Row {
-                                Text {
-                                    width: 40px;
-                                    text: "Blue";
-                                }
-                                Slider {
-                                    minimum: 0;
-                                    maximum: 255;
-                                    width: 150px;
-                                    value: root.stroke_blue;
-                                    changed(value) => {
-                                        root.stroke_blue = value;
-                                    }
-                                }
-                            }
-                        }
-                        color_display := Rectangle {
-                            width: 50px;
-                            height: 50px;
-                            background: root.stroke_brush;
-                        }
-                    }
-                    HorizontalBox  {
-                        Text {
-                            width: 40px;
-                            text: "Width";
-                        }
-                        LineEdit {
-                            width: 40px;
-                            text: root.stroke_width;
-                        }
-                        Text {
-                            width: 20px;
-                            text: "px";
-                        }
-                    }    
-                    HorizontalBox{
-                        StandardButton { 
-                            kind: ok; 
-                            clicked => {
-                                color_popup.close();
-                            } 
-                        }
+                Text {
+                    text: "Circles";
+                }
+                Button {
+                    text: "Cercle-centre-rayon";
+                    clicked => {
+                        root.request-increase-value();
                     }
                 }
 
+                Button {
+                    text: "Cercle-centre-point";
+                    clicked => {
+                        root.contextual_text = "Click on the circle center";
+                        root.current_action = 12;
+                    }
+                }
 
+                Button {
+                    text: "Cercle-deux-points";
+                    clicked => {
+                        root.request-decrease-value();
+                    }
+                }
+
+                Button {
+                    text: "Cercle-trois-points";
+                    clicked => {
+                        root.request-decrease-value();
+                    }
+                }
+
+                
+                Rectangle {
+                    width: point.width;
+                    height: 1px;
+                    background: white;
+                }
+                Text {
+                    text: "Lines";
+                }
+                Button {
+                    // Segment
+                    text: "Segment";
+                    icon: @image-url("icons/diagonal_line_32dp_E8EAED_FILL0_wght400_GRAD0_opsz40.png");
+                    clicked => {
+                        root.contextual_text = "Click on the first segment point";
+                        root.current_action = 4;
+                    }
+                }
+
+                Button {
+                    text: "Line";
+                    clicked => {
+                        root.contextual_text = "Click on the first line point";
+                        root.current_action = 8;
+                    }
+                }
+
+                Button {
+                    text: "Half Line";
+                    clicked => {
+                        root.contextual_text = "Click on the end point";
+                        root.current_action = 10;
+                    }
+                }
+
+                Button {
+                    text: "Perpendiculaire";
+                    clicked => {
+                        root.request-decrease-value();
+                    }
+                }
+
+                Button {
+                    text: "Parallèle";
+                    clicked => {
+                        root.request-decrease-value();
+                    }
+                }
+
+                Button {
+                    text: "Verticale";
+                    clicked => {
+                        root.contextual_text = "Click on a point to draw a vertical line";
+                        root.current_action = 1;
+                    }
+                }
+
+                Button {
+                    text: "Horizontale";
+                    clicked => {
+                        root.contextual_text = "Click on a point to draw an horizontal line";
+                        root.current_action = 2;
+                    }
+                }
+
+                Rectangle {
+                    width: point.width;
+                    height: 1px;
+                    background: white;
+                }
+                Text {
+                    text: "Mesures";
+                }
+                Button {
+                    text: "Angle";
+                    clicked => {
+                        root.contextual_text = "Click on the first line";
+                        root.current_action = 6;
+                    }
+                }
+                Button {
+                    text: "Distance";
+                    clicked => {
+                        root.contextual_text = "Click on the first line";
+                        root.current_action = 6;
+                    }
+                }
+
+                Rectangle {
+                    width: point.width;
+                    height: 1px;
+                    background: white;
+                }
+                Text {
+                    text: "Divers";
+                }
+                Button {
+                    // Color palette
+                    text: "Palette";
+                    icon: @image-url("icons/palette_32dp_E8EAED_FILL0_wght400_GRAD0_opsz40.png");
+                    clicked => {
+                        color_popup.show();
+                    }
+                }
+
+                Button {
+                    // Delete
+                    text: "Delete";
+                    icon: @image-url("icons/delete_forever_32dp_E8EAED_FILL0_wght400_GRAD0_opsz40.png");
+                    clicked => {
+                        root.contextual_text = "Click on the item to delete";
+                        root.current_action = 14;
+                    }
+                }
             }
 
-        }
-
-        Text {
-            text: "Counter: \{root.counter}";
-        }
-        HorizontalBox {
             canva := Image {
-                source : map;
-                width: 640px;
-                height: 480px;
-                
+                source: map;
+                min-width: 800px;
+                min-height: 600px;    
+                preferred-width: 100%;
+                preferred-height: 100%;
+                horizontal-stretch: 1;
+                vertical-stretch: 1;
                 area := TouchArea {
                     width: parent.width;
                     height: parent.height;
                     clicked => {
-                        root.mouse_x = self.pressed-x/1px;
-                        root.mouse_y = self.pressed-y/1px;
+                        root.mouse_x = self.pressed-x / 1px;
+                        root.mouse_y = self.pressed-y / 1px;
                         root.image_click();
                     }
                 }
             }
 
             StandardListView {
-            width: 150px;
-            height: 480px;
-            model: item_list;
-    }
-        }
-
-        Button {
-            text: "Increase value";
-            clicked => {
-                root.request-increase-value();
+                // Right menu bar
+                width: 150px;
+                model: item_list;
             }
         }
 
+        Rectangle {
+            vertical-stretch: 0;
+            width: 100%;
+            height: 1px;
+            background: white;
+        }
         Text {
+            vertical-stretch: 0;
+            height: 40px;
             text: contextual_text;
+        }
+    }
+
+    color_popup := PopupWindow {
+        width: 250px;
+        height: 150px;
+        x: root.width / 2 - self.width / 2;
+        y: root.height / 2 - self.height / 2;
+        close-on-click: false;
+        Rectangle {
+            width: parent.width;
+            height: parent.height;
+            background: grey;
+            border_radius: 3px;
+            border_width: 1px;
+            border_color: black;
+            clip: true;
+        }
+
+        VerticalBox {
+            HorizontalBox {
+                GridLayout {
+                    spacing: 5px;
+                    Row {
+                        Text {
+                            width: 40px;
+                            text: "Red";
+                        }
+
+                        Slider {
+                            minimum: 0;
+                            maximum: 255;
+                            width: 150px;
+                            value: root.stroke_red;
+                            changed(value) => {
+                                root.stroke_red = value;
+                            }
+                        }
+                    }
+
+                    Row {
+                        Text {
+                            width: 40px;
+                            text: "Green";
+                        }
+
+                        Slider {
+                            minimum: 0;
+                            maximum: 255;
+                            width: 150px;
+                            value: root.stroke_green;
+                            changed(value) => {
+                                root.stroke_green = value;
+                            }
+                        }
+                    }
+
+                    Row {
+                        Text {
+                            width: 40px;
+                            text: "Blue";
+                        }
+
+                        Slider {
+                            minimum: 0;
+                            maximum: 255;
+                            width: 150px;
+                            value: root.stroke_blue;
+                            changed(value) => {
+                                root.stroke_blue = value;
+                            }
+                        }
+                    }
+                }
+
+                color_display := Rectangle {
+                    width: 50px;
+                    height: 50px;
+                    background: root.stroke_brush;
+                }
+            }
+
+            HorizontalBox {
+                Text {
+                    width: 40px;
+                    text: "Width";
+                }
+
+                LineEdit {
+                    width: 40px;
+                    text: root.stroke_width;
+                    input-type: InputType.decimal;
+                    edited(value) => {
+                        root.stroke_width = value.to-float();
+                    }
+                }
+
+                Text {
+                    width: 20px;
+                    text: "px";
+                }
+            }
+
+            HorizontalBox {
+                StandardButton {
+                    kind: ok;
+                    clicked => {
+                        color_popup.close();
+                    }
+                }
+            }
         }
     }
 }

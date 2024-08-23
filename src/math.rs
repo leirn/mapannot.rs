@@ -112,3 +112,90 @@ pub fn closest_line(point: Point, lines: Vec<Drawable>) -> Option<Drawable> {
 
     closest_line
 }
+
+/// Find line extreme coordinates from two points and axis limits
+///
+/// # Arguments
+///
+/// * `p1` - The first point
+/// * `p2` - The second point
+/// * `x_min` - The minimum x-axis limit
+/// * `x_max` - The maximum x-axis limit
+/// * `y_min` - The minimum y-axis limit
+/// * `y_max` - The maximum y-axis limit
+///
+/// # Returns
+///
+/// The extreme coordinates of the line
+pub fn find_line_extreme_coordinates(
+    p1: Point,
+    p2: Point,
+    x_min: f32,
+    x_max: f32,
+    y_min: f32,
+    y_max: f32,
+) -> (Point, Point) {
+    if p1.x == p2.x {
+        return (
+            Point {
+                x: p1.x,
+                y: y_min as i32,
+            },
+            Point {
+                x: p1.x,
+                y: y_max as i32,
+            },
+        );
+    }
+    let slope = (p2.y - p1.y) as f32 / (p2.x - p1.x) as f32;
+    let intercept = p1.y as f32 - slope * p1.x as f32;
+
+    let mut points = Vec::new();
+
+    // Intersection with y = y_min
+    if slope != 0. {
+        let x = (y_min - intercept) / slope;
+        if x >= x_min && x <= x_max {
+            points.push(Point {
+                x: x as i32,
+                y: y_min as i32,
+            });
+        }
+    }
+
+    // Intersection with y = y_max
+    if slope != 0. {
+        let x = (y_max - intercept) / slope;
+        if x >= x_min && x <= x_max {
+            points.push(Point {
+                x: x as i32,
+                y: y_max as i32,
+            });
+        }
+    }
+
+    // Intersection with x = x_min
+    let y = slope * x_min + intercept;
+    if y >= y_min && y <= y_max {
+        points.push(Point {
+            x: x_min as i32,
+            y: y as i32,
+        });
+    }
+
+    // Intersection with x = x_max
+    let y = slope * x_max + intercept;
+    if y >= y_min && y <= y_max {
+        points.push(Point {
+            x: x_max as i32,
+            y: y as i32,
+        });
+    }
+
+    // Ensure we have exactly two points
+    if points.len() != 2 {
+        panic!("Line does not intersect the bounding box in exactly two points");
+    }
+
+    (points[0], points[1])
+}
