@@ -3,37 +3,17 @@ mod rendering;
 
 use slint::{SharedString, VecModel};
 
-use rendering::{render_image, Color, Drawable, DrawableType, Point};
+use rendering::{Color, DrawableType, Point, Renderer};
 
 slint::include_modules!();
-
-struct IdGenerator {
-    id: i32,
-}
-
-impl IdGenerator {
-    fn new() -> IdGenerator {
-        IdGenerator { id: 0 }
-    }
-
-    fn get_id(&mut self) -> i32 {
-        self.id += 1;
-        log::debug!("New id: {}", self.id);
-        self.id
-    }
-}
 
 fn main() -> Result<(), slint::PlatformError> {
     env_logger::init();
 
-    let mut id_generator = IdGenerator::new();
+    let mut renderer = Renderer::new();
     let mut standing_point = Point { x: 0, y: 0 };
     let mut standing_drawable = None;
     let mut next_action = 0;
-
-    let mut drawables: Vec<Drawable> = vec![];
-  
-    let d = drawables.clone();
 
     let ui = AppWindow::new()?;
     let ui_handle = ui.as_weak();
@@ -57,7 +37,7 @@ fn main() -> Result<(), slint::PlatformError> {
             let contextual_text = match ui.get_current_action() {
                 // Get closest line
                 0 => {
-                    let closest_line = math::closest_line(Point { x: x, y: y }, drawables.clone());
+                    let closest_line = math::closest_line(Point { x: x, y: y }, renderer.get_drawables());
                     match closest_line {
                         Some(line) => {
                             let output = format!("{:?}", line);
@@ -68,50 +48,47 @@ fn main() -> Result<(), slint::PlatformError> {
                 }
                 // Vertical line
                 1 => {
-                    drawables.push(Drawable {
-                        id: id_generator.get_id(),
-                        point1: Point { x: x, y: 0 },
-                        point2: Point { x: x, y: 480 },
-                        color: Color {
+                    renderer.add_drawable(
+                        DrawableType::Line,
+                        Point { x: x, y: 0 },
+                        Point { x: x, y: 480 },
+                        Color {
                             r: red,
                             g: green,
                             b: blue,
                         },
-                        object_type: DrawableType::Line,
-                        width: width,
-                    });
+                        width,
+                    );
                     "Vertical line added".to_string()
                 }
                 // Horizontal line
                 2 => {
-                    drawables.push(Drawable {
-                        id: id_generator.get_id(),
-                        point1: Point { x: 0, y: y },
-                        point2: Point { x: 640, y: y },
-                        color: Color {
+                    renderer.add_drawable(
+                        DrawableType::Line,
+                        Point { x: 0, y: y },
+                        Point { x: 640, y: y },
+                        Color {
                             r: red,
                             g: green,
                             b: blue,
                         },
-                        object_type: DrawableType::Line,
-                        width: width,
-                    });
+                        width,
+                    );
                     "Horizontal line added".to_string()
                 }
                 // Point
                 3 => {
-                    drawables.push(Drawable {
-                        id: id_generator.get_id(),
-                        point1: Point { x: x, y: y },
-                        point2: Point { x: 0, y: 0 },
-                        color: Color {
+                    renderer.add_drawable(
+                        DrawableType::Point,
+                        Point { x: x, y: y },
+                        Point { x: 0, y: 0 },
+                        Color {
                             r: red,
                             g: green,
                             b: blue,
                         },
-                        object_type: DrawableType::Point,
-                        width: width,
-                    });
+                        width,
+                    );
                     "Point added".to_string()
                 }
                 // First segment point
@@ -122,24 +99,23 @@ fn main() -> Result<(), slint::PlatformError> {
                 }
                 // Second segment point
                 5 => {
-                    drawables.push(Drawable {
-                        id: id_generator.get_id(),
-                        point1: standing_point,
-                        point2: Point { x: x, y: y },
-                        color: Color {
+                    renderer.add_drawable(
+                        DrawableType::Segment,
+                        standing_point,
+                        Point { x: x, y: y },
+                        Color {
                             r: red,
                             g: green,
                             b: blue,
                         },
-                        object_type: DrawableType::Segment,
-                        width: width,
-                    });
+                        width,
+                    );
                     next_action = 0;
                     "Segment added".to_string()
                 }
                 // First angle computation line
                 6 => {
-                    let closest_line = math::closest_line(Point { x: x, y: y }, drawables.clone());
+                    let closest_line = math::closest_line(Point { x: x, y: y }, renderer.get_drawables());
                     match closest_line {
                         Some(line) => {
                             standing_drawable = Some(line);
@@ -152,7 +128,7 @@ fn main() -> Result<(), slint::PlatformError> {
                 // Second angle computation line
                 7 => {
                     next_action = 0;
-                    let closest_line = math::closest_line(Point { x: x, y: y }, drawables.clone());
+                    let closest_line = math::closest_line(Point { x: x, y: y }, renderer.get_drawables());
                     match closest_line {
                         Some(line) => {
                             let line1 = standing_drawable.unwrap();
@@ -178,18 +154,17 @@ fn main() -> Result<(), slint::PlatformError> {
                 // Second line point
                 9 => {
                     next_action = 0;
-                    drawables.push(Drawable {
-                        id: id_generator.get_id(),
-                        point1: standing_point,
-                        point2: Point { x: x, y: y },
-                        color: Color {
+                    renderer.add_drawable(
+                        DrawableType::Line,
+                        standing_point,
+                        Point { x: x, y: y },
+                        Color {
                             r: red,
                             g: green,
                             b: blue,
                         },
-                        object_type: DrawableType::Line,
-                        width: width,
-                    });
+                        width,
+                    );
                     "Line added".to_string()
                 }
                 // First half line point
@@ -201,18 +176,17 @@ fn main() -> Result<(), slint::PlatformError> {
                 // Second half line point
                 11 => {
                     next_action = 0;
-                    drawables.push(Drawable {
-                        id: id_generator.get_id(),
-                        point1: standing_point,
-                        point2: Point { x: x, y: y },
-                        color: Color {
+                    renderer.add_drawable(
+                        DrawableType::HalfLine,
+                        standing_point,
+                        Point { x: x, y: y },
+                        Color {
                             r: red,
                             g: green,
                             b: blue,
                         },
-                        object_type: DrawableType::HalfLine,
-                        width: width,
-                    });
+                        width,
+                    );
                     "Half line added".to_string()
                 }
                 // Circle center
@@ -224,27 +198,27 @@ fn main() -> Result<(), slint::PlatformError> {
                 // Second circle point
                 13 => {
                     next_action = 0;
-                    drawables.push(Drawable {
-                        id: id_generator.get_id(),
-                        point1: standing_point,
-                        point2: Point { x: x, y: y },
-                        color: Color {
+                    renderer.add_drawable(
+                        DrawableType::Circle,
+                        standing_point,
+                        Point { x: x, y: y },
+                        Color {
                             r: red,
                             g: green,
                             b: blue,
                         },
-                        object_type: DrawableType::Circle,
-                        width: width,
-                    });
+                        width,
+                    );
                     "Circle added".to_string()
                 }
                 // Delete object
                 14 => {
-                    let closest_line = math::closest_object(Point { x: x, y: y }, drawables.clone());
+                    let closest_line =
+                        math::closest_object(Point { x: x, y: y }, renderer.get_drawables());
                     match closest_line {
                         Some(line) => {
                             // Remove line from drawables based on id
-                            drawables.retain(|x| x.id != line.id);
+                            renderer.remove_drawable(line.id);
                             "Object deleted".to_string()
                         }
                         None => "No object found".to_string(),
@@ -261,7 +235,10 @@ fn main() -> Result<(), slint::PlatformError> {
                     next_action = 0;
                     let m_per_px = ui.get_m_per_px();
                     let distance = math::distance(standing_point, Point { x: x, y: y });
-                    format!("Distance beetwen two points is {:.2} km", distance * m_per_px / 1000.)
+                    format!(
+                        "Distance beetwen two points is {:.2} km",
+                        distance * m_per_px / 1000.
+                    )
                 }
                 // Point to measure distance to line
                 17 => {
@@ -273,21 +250,69 @@ fn main() -> Result<(), slint::PlatformError> {
                 18 => {
                     next_action = 0;
                     let m_per_px = ui.get_m_per_px();
-                    let closest_line = math::closest_line(Point { x: x, y: y }, drawables.clone());
+                    let closest_line = math::closest_line(Point { x: x, y: y }, renderer.get_drawables());
                     match closest_line {
                         Some(line) => {
                             let distance = math::perpendicular_distance(standing_point, line);
-                            format!("Distance beetwen two points is {:.2} km", distance * m_per_px / 1000.)
+                            format!(
+                                "Distance beetwen two points is {:.2} km",
+                                distance * m_per_px / 1000.
+                            )
+                        }
+                        None => "No line found".to_string(),
+                    }
+                }
+                // Circle radius
+                19 => {
+                    next_action = 0;
+                    let m_per_px = ui.get_m_per_px();
+                    let closest_circle = math::closest_circle(Point { x: x, y: y }, renderer.get_drawables());
+                    match closest_circle {
+                        Some(circle) => {
+                            let distance = math::distance(circle.point1, circle.point2);
+                            format!(
+                                "The radius is {:.2} km",
+                                distance * m_per_px / 1000.
+                            )
+                        }
+                        None => "No line found".to_string(),
+                    }
+                }
+                // Point the parallel line will go through
+                20 => {
+                    standing_point = Point { x: x, y: y };
+                    next_action = 21;
+                    "Click on any point on the circle".to_string()
+                }
+                // Line of reference for the parallel line
+                21 => {
+                    next_action = 0;
+                    let closest_line = math::closest_line(Point { x: x, y: y }, renderer.get_drawables());
+                    match closest_line {
+                        Some(closest_line) => {
+                            let drawable = math::parallel_line(standing_point, closest_line);
+                            renderer.add_drawable(
+                                DrawableType::Line,
+                                drawable.point1,
+                                drawable.point2,
+                                Color {
+                                    r: red,
+                                    g: green,
+                                    b: blue,
+                                },
+                                width,
+                            );
+                            "Parallel line added".to_string()
                         }
                         None => "No line found".to_string(),
                     }
                 }
                 _ => String::new(),
             };
-            let d = drawables.clone();
+            let d = renderer.get_drawables();
 
             ui.set_contextual_text(SharedString::from(contextual_text.as_str()));
-            ui.set_map(render_image(&d));
+            ui.set_map(renderer.render_image());
             ui.set_current_action(next_action);
             let mut my_vec = vec![];
 
@@ -307,7 +332,9 @@ fn main() -> Result<(), slint::PlatformError> {
 
         let _ = slint::invoke_from_event_loop(move || {
             log::debug!("Entering invoke_from_event_loop");
-            let image = render_image(&d);
+            
+            let mut renderer = Renderer::new();
+            let image = renderer.render_image();
             let ui_local_handle = handle_copy.unwrap();
 
             ui_local_handle.set_map(image);

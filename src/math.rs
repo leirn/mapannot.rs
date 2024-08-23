@@ -295,7 +295,7 @@ pub fn closest_circle(point: Point, circles: Vec<Drawable>) -> Option<Drawable> 
 ///
 /// The closest point to the specific point
 ///
-pub fn closest_point(point: Point, points: Vec<Drawable>) -> Option<Drawable> {
+pub fn _closest_point(point: Point, points: Vec<Drawable>) -> Option<Drawable> {
     let mut min_distance = f32::MAX;
     let mut closest_point = None;
 
@@ -342,13 +342,9 @@ pub fn closest_object(point: Point, objects: Vec<Drawable>) -> Option<Drawable> 
             // TODO : for segment and halfline, we should calculate the distance to the part that is actually drawn
             DrawableType::Line => perpendicular_distance(point, drawable),
             DrawableType::Segment => {
-                let p1 = drawable.point1;
-                let p2 = drawable.point2;
                 distance_to_segment(point, drawable)
             }
             DrawableType::HalfLine => {
-                let p1 = drawable.point1;
-                let p2 = drawable.point2;
                 distance_to_half_line(point, drawable)
             }
         };
@@ -362,4 +358,44 @@ pub fn closest_object(point: Point, objects: Vec<Drawable>) -> Option<Drawable> 
     }
 
     closest_object
+}
+
+/// Find the coordinates of a line parallel to a given line and passing through a specific point
+/// 
+/// # Arguments
+/// 
+/// * `point` - The specific point
+/// * `line` - The given line
+/// 
+/// # Returns
+/// 
+/// The coordinates of the line parallel to the given line and passing through the specific point
+pub fn parallel_line(point: Point, line: Drawable) -> Drawable {
+    if line.point1.x == line.point2.x {
+        return Drawable {
+            id: 0,
+            object_type: DrawableType::Line,
+            point1: Point { x: point.x, y: 0 },
+            point2: Point { x: point.x, y: 100 },
+            color: line.color,
+            width: line.width,
+        };
+    }
+
+    let slope = (line.point2.y - line.point1.y) as f32 / (line.point2.x - line.point1.x) as f32;
+    let intercept = point.y as f32 - slope * point.x as f32;
+
+    let x1 = 0;
+    let y1 = (slope * x1 as f32 + intercept) as i32;
+    let x2 = 1000;
+    let y2 = (slope * x2 as f32 + intercept) as i32;
+
+    Drawable {
+        id: 0,
+        object_type: DrawableType::Line,
+        point1: Point { x: x1, y: y1 },
+        point2: Point { x: x2, y: y2 },
+        color: line.color,
+        width: line.width,
+    }
 }

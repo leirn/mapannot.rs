@@ -133,7 +133,8 @@ export component AppWindow inherits Window {
                 Button {
                     text: "Parallèle";
                     clicked => {
-                        root.contextual_text = "Not implemented yet";
+                        root.contextual_text = "Click on a point the parallel line goes through";
+                        root.current_action = 20;
                     }
                 }
 
@@ -180,6 +181,13 @@ export component AppWindow inherits Window {
                     clicked => {
                         root.contextual_text = "Click on the first line";
                         root.current_action = 6;
+                    }
+                }
+                Button {
+                    text: "Radius";
+                    clicked => {
+                        root.contextual_text = "Click on a circle";
+                        root.current_action = 19;
                     }
                 }
 
