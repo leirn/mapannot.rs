@@ -13,6 +13,7 @@ export component AppWindow inherits Window {
     in-out property <brush> stroke_brush: rgb(root.stroke_red, root.stroke_green, root.stroke_blue);
     in-out property <float> stroke_width: 4;
     in-out property <image> map;
+    in-out property <float> m_per_px: 50000;
     in-out property <[StandardListViewItem]> item_list: [
         { text: "Blue" },
         { text: "Red" },
@@ -47,7 +48,7 @@ export component AppWindow inherits Window {
                 Button {
                     text: "Médiatrice";
                     clicked => {
-                        root.request-decrease-value();
+                        root.contextual_text = "Not implemented yet";
                     }
                 }
 
@@ -63,7 +64,7 @@ export component AppWindow inherits Window {
                 Button {
                     text: "Cercle-centre-rayon";
                     clicked => {
-                        root.request-increase-value();
+                        root.contextual_text = "Not implemented yet";
                     }
                 }
 
@@ -78,14 +79,14 @@ export component AppWindow inherits Window {
                 Button {
                     text: "Cercle-deux-points";
                     clicked => {
-                        root.request-decrease-value();
+                        root.contextual_text = "Not implemented yet";
                     }
                 }
 
                 Button {
                     text: "Cercle-trois-points";
                     clicked => {
-                        root.request-decrease-value();
+                        root.contextual_text = "Not implemented yet";
                     }
                 }
 
@@ -127,14 +128,14 @@ export component AppWindow inherits Window {
                 Button {
                     text: "Perpendiculaire";
                     clicked => {
-                        root.request-decrease-value();
+                        root.contextual_text = "Not implemented yet";
                     }
                 }
 
                 Button {
                     text: "Parallèle";
                     clicked => {
-                        root.request-decrease-value();
+                        root.contextual_text = "Not implemented yet";
                     }
                 }
 
@@ -160,17 +161,24 @@ export component AppWindow inherits Window {
                     background: white;
                 }
                 Text {
-                    text: "Mesures";
+                    text: "Measurements";
                 }
                 Button {
-                    text: "Angle";
+                    text: "Two points";
                     clicked => {
-                        root.contextual_text = "Click on the first line";
-                        root.current_action = 6;
+                        root.contextual_text = "Click on the first point";
+                        root.current_action = 15;
                     }
                 }
                 Button {
-                    text: "Distance";
+                    text: "Point to line";
+                    clicked => {
+                        root.contextual_text = "Click on the point";
+                        root.current_action = 17;
+                    }
+                }
+                Button {
+                    text: "Angle";
                     clicked => {
                         root.contextual_text = "Click on the first line";
                         root.current_action = 6;

@@ -64,7 +64,7 @@ fn angle(p1: Point, p2: Point, p3: Point, p4: Point) -> f32 {
 /// # Returns
 ///
 /// The perpendicular distance from the point to the line segment
-fn perpendicular_distance(p: Point, p1: Point, p2: Point) -> f32 {
+pub fn perpendicular_distance(p: Point, p1: Point, p2: Point) -> f32 {
     let x0 = p.x as f32;
     let y0 = p.y as f32;
     let x1 = p1.x as f32;

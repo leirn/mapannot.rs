@@ -298,6 +298,36 @@ fn main() -> Result<(), slint::PlatformError> {
                         None => "No object found".to_string(),
                     }
                 }
+                // First point to measure distance
+                15 => {
+                    standing_point = Point { x: x, y: y };
+                    next_action = 16;
+                    "Click on the second point".to_string()
+                }
+                // Second point to measure distance
+                16 => {
+                    let m_per_px = ui.get_m_per_px();
+                    let distance = math::distance(standing_point, Point { x: x, y: y });
+                    format!("Distance beetwen two points is {:.2} km", distance / m_per_px)
+                }
+                // Point to measure distance to line
+                17 => {
+                    standing_point = Point { x: x, y: y };
+                    next_action = 18;
+                    "Click on the second point".to_string()
+                }
+                // Line to measure distance
+                18 => {
+                    let m_per_px = ui.get_m_per_px();
+                    let closest_line = math::closest_line(Point { x: x, y: y }, drawables.clone());
+                    match closest_line {
+                        Some(line) => {
+                            let distance = math::perpendicular_distance(standing_point, line.point1, line.point2);
+                            format!("Distance beetwen two points is {:.2} km", distance / m_per_px)
+                        }
+                        None => "No line found".to_string(),
+                    }
+                }
                 _ => String::new(),
             };
             let d = drawables.clone();
