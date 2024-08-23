@@ -7,6 +7,13 @@ export component AppWindow inherits Window {
     in-out property <int> counter: 42;
     in-out property <int> mouse_x: 42;
     in-out property <int> mouse_y: 42;
+
+    in-out property <int> offset_x: 0;
+    in-out property <int> offset_y: 0;
+    in-out property <int> source_clip_when_pressed_x: 0;
+    in-out property <int> source_clip_when_pressed_y: 0;
+    in-out property <bool> move: false;
+
     in-out property <float> stroke_red: 42;
     in-out property <float> stroke_green: 185;
     in-out property <float> stroke_blue: 37;
@@ -242,6 +249,8 @@ export component AppWindow inherits Window {
                 preferred-height: 100%;
                 horizontal-stretch: 1;
                 vertical-stretch: 1;
+                horizontal-tiling: ImageTiling.none;
+                vertical-tiling: ImageTiling.none;
                 area := TouchArea {
                     width: parent.width;
                     height: parent.height;
@@ -249,6 +258,48 @@ export component AppWindow inherits Window {
                         root.mouse_x = self.pressed-x / 1px;
                         root.mouse_y = self.pressed-y / 1px;
                         root.image_click();
+                    }
+                    scroll-event(event) => {
+                        if root.move {
+                            return EventResult.reject;
+                        }
+
+                        if event.delta-y > 0 {
+                            parent.source-clip-x += parent.source.width / 10;
+                            parent.source-clip-y += parent.source.height / 10;
+                            parent.source-clip-width -= max(parent.source.width / 10, 0);
+                            parent.source-clip-height -= max(parent.source.height / 10, 0);
+                            root.m_per_px *= 1.1;
+                        } else {
+                            parent.source-clip-x -= max(parent.source.width / 10, 0);
+                            parent.source-clip-y -= max(parent.source.height / 10, 0);
+                            parent.source-clip-width += parent.source.width / 10;
+                            parent.source-clip-height += parent.source.height / 10;
+                        }
+                        return EventResult.accept;
+                    }
+                    moved => {
+                        if root.move{
+                            root.offset_x = self.pressed-x / 1px - self.mouse-x / 1px;
+                            root.offset_y = self.pressed-y / 1px - self.mouse-y / 1px;
+                            parent.source-clip-x = root.source_clip_when_pressed_x + root.offset_x;
+                            parent.source-clip-y = root.source_clip_when_pressed_y + root.offset_y;
+                        }
+                    }
+                    pointer-event(event) => {
+                        if event.button == PointerEventButton.left {
+                            if event.kind == PointerEventKind.down {
+                                root.move = true;
+                                self.mouse-cursor = MouseCursor.move;
+                                root.source_clip_when_pressed_x = parent.source-clip-x;
+                                root.source_clip_when_pressed_y = parent.source-clip-y;
+                            }
+                            if event.kind == PointerEventKind.up {
+                                root.move = false;
+                                self.mouse-cursor = MouseCursor.default;
+                            }
+                        }
+                        return EventResult.accept;
                     }
                 }
             }
