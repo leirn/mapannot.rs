@@ -24,8 +24,6 @@ export component AppWindow inherits Window {
         { text: "Magenta" },
         { text: "Cyan" },
     ];
-    callback request-increase-value();
-    callback request-decrease-value();
     callback update_image();
     callback image_click();
     VerticalBox {
@@ -118,7 +116,7 @@ export component AppWindow inherits Window {
                 }
 
                 Button {
-                    text: "Half Line";
+                    text: "Half line";
                     clicked => {
                         root.contextual_text = "Click on the end point";
                         root.current_action = 10;

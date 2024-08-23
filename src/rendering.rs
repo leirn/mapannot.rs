@@ -114,7 +114,6 @@ pub fn render_image(drawables: &Vec<Drawable>) -> Image {
                 } else {
                     pb.move_to(p1.x as f32, p1.y as f32);
                 }
-                pb.move_to(draw.point1.x as f32, draw.point1.y as f32);
                 pb.line_to(p2.x as f32, p2.y as f32);
                 let path = pb.finish().unwrap();
 

@@ -199,3 +199,112 @@ pub fn find_line_extreme_coordinates(
 
     (points[0], points[1])
 }
+
+
+/// Find closest circle to a specific point
+///
+/// # Arguments
+/// 
+/// * `point` - The specific point
+/// * `circles` - A vector of tuples representing the circles
+/// 
+/// # Returns
+/// 
+/// The closest circle to the specific point
+pub fn closest_circle(point: Point, circles: Vec<Drawable>) -> Option<Drawable> {
+    let mut min_distance = f32::MAX;
+    let mut closest_circle = None;
+
+    for drawable in circles {
+        if drawable.object_type != DrawableType::Circle {
+            continue;
+        }
+
+        let radius = distance(drawable.point1, drawable.point2);
+
+        let center = drawable.point1;
+        let distance = distance(point, center) - radius;
+
+        log::debug!("Id: {}, Distance: {}", drawable.id, distance);
+
+        if distance < min_distance {
+            min_distance = distance;
+            closest_circle = Some(drawable.clone());
+        }
+    }
+
+    closest_circle
+}
+
+/// Find closest point to a specific point
+/// 
+/// # Arguments
+/// 
+/// * `point` - The specific point
+/// * `points` - A vector of tuples representing the points
+/// 
+/// # Returns
+/// 
+/// The closest point to the specific point
+/// 
+pub fn closest_point(point: Point, points: Vec<Drawable>) -> Option<Drawable> {
+    let mut min_distance = f32::MAX;
+    let mut closest_point = None;
+
+    for drawable in points {
+        if drawable.object_type != DrawableType::Point {
+            continue;
+        }
+
+        let distance = distance(point, drawable.point1);
+
+        log::debug!("Id: {}, Distance: {}", drawable.id, distance);
+
+        if distance < min_distance {
+            min_distance = distance;
+            closest_point = Some(drawable.clone());
+        }
+    }
+
+    closest_point
+}
+
+/// Find closest object to a specific point
+/// 
+/// # Arguments
+/// 
+/// * `point` - The specific point
+/// * `objects` - A vector of tuples representing the objects
+/// 
+/// # Returns
+/// 
+/// The closest object to the specific point
+pub fn closest_object(point: Point, objects: Vec<Drawable>) -> Option<Drawable> {
+    let mut min_distance = f32::MAX;
+    let mut closest_object = None;
+
+    for drawable in objects {
+        let distance = match drawable.object_type {
+            DrawableType::Circle => {
+                let radius = distance(drawable.point1, drawable.point2);
+                let center = drawable.point1;
+                distance(point, center) - radius
+            }
+            DrawableType::Point => distance(point, drawable.point1),
+            DrawableType::Line | DrawableType::Segment | DrawableType::DemiDroite => {
+                let p1 = drawable.point1;
+                let p2 = drawable.point2;
+                perpendicular_distance(point, p1, p2)
+            }
+        };
+
+        log::debug!("Id: {}, Distance: {}", drawable.id, distance);
+
+        if distance < min_distance {
+            min_distance = distance;
+            closest_object = Some(drawable.clone());
+        }
+    }
+
+    closest_object
+}

@@ -26,68 +26,17 @@ impl IdGenerator {
 fn main() -> Result<(), slint::PlatformError> {
     env_logger::init();
 
-    let current_color = Color { r: 255, g: 0, b: 0 };
     let mut id_generator = IdGenerator::new();
     let mut standing_point = Point { x: 0, y: 0 };
     let mut standing_drawable = None;
     let mut next_action = 0;
 
     let mut drawables: Vec<Drawable> = vec![];
-    drawables.push(Drawable {
-        id: id_generator.get_id(),
-        point1: Point { x: 100, y: 0 },
-        point2: Point { x: 100, y: 480 },
-        color: current_color.clone(),
-        object_type: DrawableType::Line,
-        width: 2.5,
-    });
-    drawables.push(Drawable {
-        id: id_generator.get_id(),
-        point1: Point { x: 0, y: 100 },
-        point2: Point { x: 640, y: 100 },
-        color: current_color.clone(),
-        object_type: DrawableType::Line,
-        width: 2.5,
-    });
-    drawables.push(Drawable {
-        id: id_generator.get_id(),
-        point1: Point { x: 320, y: 240 },
-        point2: Point { x: 320, y: 140 },
-        color: current_color.clone(),
-        object_type: DrawableType::Circle,
-        width: 2.5,
-    });
-    drawables.push(Drawable {
-        id: id_generator.get_id(),
-        point1: Point { x: 320, y: 240 },
-        point2: Point { x: 320, y: 140 },
-        color: current_color.clone(),
-        object_type: DrawableType::Point,
-        width: 5.,
-    });
-
+  
     let d = drawables.clone();
 
     let ui = AppWindow::new()?;
     let ui_handle = ui.as_weak();
-
-    ui.on_request_increase_value({
-        log::debug!("Entering on_request_increase_value");
-        let ui_handle = ui.as_weak();
-        move || {
-            let ui = ui_handle.unwrap();
-            ui.set_counter(ui.get_counter() + 1);
-        }
-    });
-
-    ui.on_request_decrease_value({
-        log::debug!("Entering on_request_decrease_value");
-        let ui_handle = ui.as_weak();
-        move || {
-            let ui = ui_handle.unwrap();
-            ui.set_counter(ui.get_counter() - 1);
-        }
-    });
 
     ui.on_image_click({
         log::debug!("Entering on_image_click");
@@ -104,7 +53,6 @@ fn main() -> Result<(), slint::PlatformError> {
             log::debug!("Mouse position = {x}, {y}");
 
             log::debug!("Current action: {}", ui.get_current_action());
-            next_action = 0;
 
             let contextual_text = match ui.get_current_action() {
                 // Get closest line
@@ -186,6 +134,7 @@ fn main() -> Result<(), slint::PlatformError> {
                         object_type: DrawableType::Segment,
                         width: width,
                     });
+                    next_action = 0;
                     "Segment added".to_string()
                 }
                 // First angle computation line
@@ -202,6 +151,7 @@ fn main() -> Result<(), slint::PlatformError> {
                 }
                 // Second angle computation line
                 7 => {
+                    next_action = 0;
                     let closest_line = math::closest_line(Point { x: x, y: y }, drawables.clone());
                     match closest_line {
                         Some(line) => {
@@ -222,11 +172,12 @@ fn main() -> Result<(), slint::PlatformError> {
                 // First line point
                 8 => {
                     standing_point = Point { x: x, y: y };
-                    next_action = 5;
+                    next_action = 9;
                     "Click on the second line point".to_string()
                 }
                 // Second line point
                 9 => {
+                    next_action = 0;
                     drawables.push(Drawable {
                         id: id_generator.get_id(),
                         point1: standing_point,
@@ -244,11 +195,12 @@ fn main() -> Result<(), slint::PlatformError> {
                 // First half line point
                 10 => {
                     standing_point = Point { x: x, y: y };
-                    next_action = 5;
+                    next_action = 11;
                     "Click on the half broken line point".to_string()
                 }
                 // Second half line point
                 11 => {
+                    next_action = 0;
                     drawables.push(Drawable {
                         id: id_generator.get_id(),
                         point1: standing_point,
@@ -271,6 +223,7 @@ fn main() -> Result<(), slint::PlatformError> {
                 }
                 // Second circle point
                 13 => {
+                    next_action = 0;
                     drawables.push(Drawable {
                         id: id_generator.get_id(),
                         point1: standing_point,
@@ -287,8 +240,7 @@ fn main() -> Result<(), slint::PlatformError> {
                 }
                 // Delete object
                 14 => {
-                    // TODO : only works on lines and segments for now
-                    let closest_line = math::closest_line(Point { x: x, y: y }, drawables.clone());
+                    let closest_line = math::closest_object(Point { x: x, y: y }, drawables.clone());
                     match closest_line {
                         Some(line) => {
                             // Remove line from drawables based on id
@@ -306,9 +258,10 @@ fn main() -> Result<(), slint::PlatformError> {
                 }
                 // Second point to measure distance
                 16 => {
+                    next_action = 0;
                     let m_per_px = ui.get_m_per_px();
                     let distance = math::distance(standing_point, Point { x: x, y: y });
-                    format!("Distance beetwen two points is {:.2} km", distance / m_per_px)
+                    format!("Distance beetwen two points is {:.2} km", distance * m_per_px / 1000.)
                 }
                 // Point to measure distance to line
                 17 => {
@@ -318,12 +271,13 @@ fn main() -> Result<(), slint::PlatformError> {
                 }
                 // Line to measure distance
                 18 => {
+                    next_action = 0;
                     let m_per_px = ui.get_m_per_px();
                     let closest_line = math::closest_line(Point { x: x, y: y }, drawables.clone());
                     match closest_line {
                         Some(line) => {
                             let distance = math::perpendicular_distance(standing_point, line.point1, line.point2);
-                            format!("Distance beetwen two points is {:.2} km", distance / m_per_px)
+                            format!("Distance beetwen two points is {:.2} km", distance * m_per_px / 1000.)
                         }
                         None => "No line found".to_string(),
                     }
