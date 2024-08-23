@@ -8,7 +8,7 @@ use crate::math::{distance, find_line_extreme_coordinates};
 pub enum DrawableType {
     Point,
     Segment,
-    DemiDroite,
+    HalfLine,
     Line,
     Circle,
 }
@@ -99,7 +99,7 @@ pub fn render_image(drawables: &Vec<Drawable>) -> Image {
                     None,
                 );
             }
-            DrawableType::Line | DrawableType::DemiDroite => {
+            DrawableType::Line | DrawableType::HalfLine => {
                 let (p1, p2) = find_line_extreme_coordinates(
                     draw.point1,
                     draw.point2,
@@ -109,7 +109,7 @@ pub fn render_image(drawables: &Vec<Drawable>) -> Image {
                     height as f32,
                 );
                 let mut pb = tiny_skia::PathBuilder::new();
-                if draw.object_type == DrawableType::DemiDroite {
+                if draw.object_type == DrawableType::HalfLine {
                     pb.move_to(draw.point1.x as f32, draw.point1.y as f32);
                 } else {
                     pb.move_to(p1.x as f32, p1.y as f32);

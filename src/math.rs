@@ -1,3 +1,5 @@
+use std::cmp::min;
+
 use crate::rendering::{Drawable, DrawableType, Point};
 
 /// Calculate the distance between two points
@@ -64,17 +66,66 @@ fn angle(p1: Point, p2: Point, p3: Point, p4: Point) -> f32 {
 /// # Returns
 ///
 /// The perpendicular distance from the point to the line segment
-pub fn perpendicular_distance(p: Point, p1: Point, p2: Point) -> f32 {
+pub fn perpendicular_distance(p: Point, line: Drawable) -> f32 {
     let x0 = p.x as f32;
     let y0 = p.y as f32;
-    let x1 = p1.x as f32;
-    let y1 = p1.y as f32;
-    let x2 = p2.x as f32;
-    let y2 = p2.y as f32;
+    let x1 = line.point1.x as f32;
+    let y1 = line.point1.y as f32;
+    let x2 = line.point2.x as f32;
+    let y2 = line.point2.y as f32;
 
     let num = ((y2 - y1) * x0 - (x2 - x1) * y0 + x2 * y1 - y2 * x1).abs();
     let den = ((y2 - y1).powi(2) + (x2 - x1).powi(2)).sqrt();
     num / den
+}
+
+/// Calculate the distance from a point to a drawn part of a segment
+///
+/// # Arguments
+///
+/// * `p` - The point
+/// * `p1` - The first point of the line segment
+/// * `p2` - The second point of the line segment
+///
+/// # Returns
+///
+/// The distance from a point to a drawn part of a segment
+pub fn distance_to_segment(point: Point, segment: Drawable) -> f32 {
+    let p1 = segment.point1;
+    let p2 = segment.point2;
+    let perp_distance = perpendicular_distance(point, segment);
+
+    let distance_to_p1 = distance(point, p1);
+    let distance_to_p2 = distance(point, p2);
+
+    let distance = perp_distance.min(distance_to_p1).min(distance_to_p2);
+
+    log::debug!("Id: {}, Distance: {}", segment.id, distance);
+
+    distance
+}
+
+/// Calculate the distance from a point to a drawn part of a halfline
+///
+/// # Arguments
+///
+/// * `p` - The point
+/// * `p1` - The first point of the line halfline
+/// * `p2` - The second point of the line halfline
+///
+/// # Returns
+///
+/// The distance from a point to a drawn part of a halfline
+pub fn distance_to_half_line(point: Point, halfline: Drawable) -> f32 {
+    let p1 = halfline.point1;
+    let perp_distance = perpendicular_distance(point, halfline);
+
+    let distance_to_p1 = distance(point, p1);
+    let distance = perp_distance.min(distance_to_p1);
+
+    log::debug!("Id: {}, Distance: {}", halfline.id, distance);
+
+    distance
 }
 
 /// Find the closest line segment to a specific point
@@ -94,13 +145,11 @@ pub fn closest_line(point: Point, lines: Vec<Drawable>) -> Option<Drawable> {
     for drawable in lines {
         if drawable.object_type != DrawableType::Line
             && drawable.object_type != DrawableType::Segment
-            && drawable.object_type != DrawableType::DemiDroite
+            && drawable.object_type != DrawableType::HalfLine
         {
             continue;
         }
-        let p1 = drawable.point1;
-        let p2 = drawable.point2;
-        let distance = perpendicular_distance(point, p1, p2);
+        let distance = perpendicular_distance(point, drawable);
 
         log::debug!("Id: {}, Distance: {}", drawable.id, distance);
 
@@ -200,16 +249,15 @@ pub fn find_line_extreme_coordinates(
     (points[0], points[1])
 }
 
-
 /// Find closest circle to a specific point
 ///
 /// # Arguments
-/// 
+///
 /// * `point` - The specific point
 /// * `circles` - A vector of tuples representing the circles
-/// 
+///
 /// # Returns
-/// 
+///
 /// The closest circle to the specific point
 pub fn closest_circle(point: Point, circles: Vec<Drawable>) -> Option<Drawable> {
     let mut min_distance = f32::MAX;
@@ -237,16 +285,16 @@ pub fn closest_circle(point: Point, circles: Vec<Drawable>) -> Option<Drawable> 
 }
 
 /// Find closest point to a specific point
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `point` - The specific point
 /// * `points` - A vector of tuples representing the points
-/// 
+///
 /// # Returns
-/// 
+///
 /// The closest point to the specific point
-/// 
+///
 pub fn closest_point(point: Point, points: Vec<Drawable>) -> Option<Drawable> {
     let mut min_distance = f32::MAX;
     let mut closest_point = None;
@@ -270,14 +318,14 @@ pub fn closest_point(point: Point, points: Vec<Drawable>) -> Option<Drawable> {
 }
 
 /// Find closest object to a specific point
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `point` - The specific point
 /// * `objects` - A vector of tuples representing the objects
-/// 
+///
 /// # Returns
-/// 
+///
 /// The closest object to the specific point
 pub fn closest_object(point: Point, objects: Vec<Drawable>) -> Option<Drawable> {
     let mut min_distance = f32::MAX;
@@ -291,10 +339,17 @@ pub fn closest_object(point: Point, objects: Vec<Drawable>) -> Option<Drawable> 
                 distance(point, center) - radius
             }
             DrawableType::Point => distance(point, drawable.point1),
-            DrawableType::Line | DrawableType::Segment | DrawableType::DemiDroite => {
+            // TODO : for segment and halfline, we should calculate the distance to the part that is actually drawn
+            DrawableType::Line => perpendicular_distance(point, drawable),
+            DrawableType::Segment => {
                 let p1 = drawable.point1;
                 let p2 = drawable.point2;
-                perpendicular_distance(point, p1, p2)
+                distance_to_segment(point, drawable)
+            }
+            DrawableType::HalfLine => {
+                let p1 = drawable.point1;
+                let p2 = drawable.point2;
+                distance_to_half_line(point, drawable)
             }
         };
 

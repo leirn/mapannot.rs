@@ -210,7 +210,7 @@ fn main() -> Result<(), slint::PlatformError> {
                             g: green,
                             b: blue,
                         },
-                        object_type: DrawableType::DemiDroite,
+                        object_type: DrawableType::HalfLine,
                         width: width,
                     });
                     "Half line added".to_string()
@@ -276,7 +276,7 @@ fn main() -> Result<(), slint::PlatformError> {
                     let closest_line = math::closest_line(Point { x: x, y: y }, drawables.clone());
                     match closest_line {
                         Some(line) => {
-                            let distance = math::perpendicular_distance(standing_point, line.point1, line.point2);
+                            let distance = math::perpendicular_distance(standing_point, line);
                             format!("Distance beetwen two points is {:.2} km", distance * m_per_px / 1000.)
                         }
                         None => "No line found".to_string(),
