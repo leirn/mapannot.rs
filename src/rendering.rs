@@ -31,6 +31,7 @@ pub struct Drawable {
     pub point2: Point,
     pub color: Color,
     pub width: f32,
+    pub already_drawn: bool,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -100,16 +101,15 @@ pub struct Renderer {
     entity_id_generator: IdGenerator,
     image_height: u32,
     image_width: u32,
-    pixel_buffer: SharedPixelBuffer<Rgba8Pixel>,
-    to_be_rendered: bool,
+    bg_pixel_buffer: SharedPixelBuffer<Rgba8Pixel>,
+    overlay_pixel_buffer: SharedPixelBuffer<Rgba8Pixel>,
     layers: Vec<Layer>,
+    discard_overlay: bool,
 }
-
 
 impl Renderer {
     pub fn new(background_file: &str) -> Renderer {
-
-        // open image from disk and add to pixel buffer
+        // open background image from disk and add to pixel buffer
         let image = image::open(background_file).unwrap();
         let image = image.to_rgba8();
         let image_width = image.width();
@@ -126,31 +126,28 @@ impl Renderer {
             tiny_skia::PixmapMut::from_bytes(image_data.as_mut(), image_width, image_height)
                 .unwrap();
 
-        let mut pixel_buffer = SharedPixelBuffer::<Rgba8Pixel>::new(image_width, image_height);
+        let mut bg_pixel_buffer = SharedPixelBuffer::<Rgba8Pixel>::new(image_width, image_height);
+        let overlay_pixel_buffer = SharedPixelBuffer::<Rgba8Pixel>::new(1, 1);
         log::debug!("Map pixmap created");
 
         let mut pixmap = tiny_skia::PixmapMut::from_bytes(
-            pixel_buffer.make_mut_bytes(),
+            bg_pixel_buffer.make_mut_bytes(),
             image_width,
             image_height,
         )
         .unwrap();
         pixmap.draw_pixmap(0, 0, map_pixmap.as_ref(), &paint, Default::default(), None);
 
-        let mut renderer = Renderer {
+        Renderer {
             drawables: Vec::new(),
             entity_id_generator: IdGenerator::new(),
             image_height,
             image_width,
-            pixel_buffer,
-            to_be_rendered: false,
+            bg_pixel_buffer,
+            overlay_pixel_buffer,
             layers: vec![],
-        };
-        renderer
-    }
-
-    pub fn force_render(&mut self) {
-        self.to_be_rendered = true;
+            discard_overlay: true,
+        }
     }
 
     pub fn add_layer(&mut self, file: &str, x: i32, y: i32, transparency: f32) {
@@ -172,8 +169,8 @@ impl Renderer {
 
     pub fn add_drawable(&mut self, mut drawable: Drawable) {
         drawable.id = self.entity_id_generator.get_id();
+        drawable.already_drawn = false;
         self.drawables.push(drawable);
-        self.to_be_rendered = true;
     }
 
     pub fn add_drawable_by_values(
@@ -191,14 +188,14 @@ impl Renderer {
             point2,
             color,
             width,
+            already_drawn: false,
         };
         self.drawables.push(d);
-        self.to_be_rendered = true;
     }
 
     pub fn remove_drawable(&mut self, id: i32) {
         self.drawables.retain(|d| d.id != id);
-        self.to_be_rendered = true;
+        self.discard_overlay = true;
     }
 
     pub fn get_drawables(&self) -> Vec<Drawable> {
@@ -211,7 +208,7 @@ impl Renderer {
         // }
         // self.to_be_rendered = false;
         log::debug!("Entering render image");
-        let mut pixel_buffer = self.pixel_buffer.clone();
+        let mut pixel_buffer = self.bg_pixel_buffer.clone();
         log::debug!("Pixmel buffer cloned");
         let mut pixmap = tiny_skia::PixmapMut::from_bytes(
             pixel_buffer.make_mut_bytes(),
@@ -250,39 +247,60 @@ impl Renderer {
         Some(Image::from_rgba8_premultiplied(pixel_buffer))
     }
 
-
     pub fn render_overlay(&mut self, zoom: f32) -> Option<Image> {
-        if !self.to_be_rendered {
-            return None;
+        log::debug!("Entering render overlay");
+        if !self.discard_overlay {
+            let mut already_rendered = true;
+            for draw in self.drawables.iter() {
+                already_rendered &= draw.already_drawn;
+            }
+            if already_rendered {
+                log::debug!("Overlay is already rendered");
+                return None;
+            }
+        } else {
+            log::debug!("Discarding overlay");
+            for draw in self.drawables.iter_mut() {
+                draw.already_drawn = false;
+            }
+            self.overlay_pixel_buffer =
+                SharedPixelBuffer::<Rgba8Pixel>::new(self.image_width, self.image_height);
         }
 
-        let mut pixel_buffer =
-            SharedPixelBuffer::<Rgba8Pixel>::new(self.image_width, self.image_height);
+        log::debug!("Get sharepixel buffer");
+        let data = self.overlay_pixel_buffer.make_mut_bytes();
+        log::debug!("Creating pixmap");
 
-        self.to_be_rendered = false;
-        log::debug!("Entering render image");
-        log::debug!("Pixmel buffer cloned");
         let mut pixmap = tiny_skia::PixmapMut::from_bytes(
-            pixel_buffer.make_mut_bytes(),
+            data,
             self.image_width,
             self.image_height,
         )
         .unwrap();
 
-        pixmap.fill(tiny_skia::Color::TRANSPARENT);
+        if self.discard_overlay {
+            pixmap.fill(tiny_skia::Color::TRANSPARENT);
+        }
 
         log::debug!("Pixmap initialized");
-        log::debug!("pixmap ready for drawing");
-
+        
         // add all drawables to the pixmap
-        for draw in self.drawables.clone() {
-            log::debug!("Draw");
+        for draw in self.drawables.iter_mut() {
+            if draw.already_drawn {
+                continue;
+            }
+            draw.already_drawn = true;
+
+            log::debug!("Draw {}", draw.id);
             let mut paint = tiny_skia::Paint::default();
             paint.set_color_rgba8(draw.color.r, draw.color.g, draw.color.b, 255);
             paint.anti_alias = true;
 
             debug!("Width: {}, zoom: {}", draw.width, zoom);
-            let stroke = tiny_skia::Stroke { width: draw.width * zoom, ..Default::default() };
+            let stroke = tiny_skia::Stroke {
+                width: draw.width * zoom,
+                ..Default::default()
+            };
 
             match draw.object_type {
                 DrawableType::Circle => {
@@ -342,8 +360,11 @@ impl Renderer {
                 }
             };
         }
+        self.discard_overlay = false;
 
         log::debug!("End of rendering");
-        Some(Image::from_rgba8_premultiplied(pixel_buffer))
+        Some(Image::from_rgba8_premultiplied(
+            self.overlay_pixel_buffer.clone(),
+        ))
     }
 }

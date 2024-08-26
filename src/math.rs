@@ -374,6 +374,7 @@ pub fn parallel_line(point: Point, line: Drawable) -> Drawable {
             point2: Point { x: point.x, y: 100 },
             color: line.color,
             width: line.width,
+            already_drawn: false,
         };
     }
 
@@ -392,6 +393,7 @@ pub fn parallel_line(point: Point, line: Drawable) -> Drawable {
         point2: Point { x: x2, y: y2 },
         color: line.color,
         width: line.width,
+        already_drawn: false,
     }
 }
 
@@ -414,6 +416,7 @@ pub fn perpendicular_line(point: Point, line: Drawable) -> Drawable {
             point2: Point { x: point.x, y: 100 },
             color: line.color,
             width: line.width,
+            already_drawn: false,
         };
     }
 
@@ -433,6 +436,7 @@ pub fn perpendicular_line(point: Point, line: Drawable) -> Drawable {
         point2: Point { x: x2, y: y2 },
         color: Color { r: 0, g: 0, b: 0 },
         width: line.width,
+        already_drawn: false,
     }
 }
 
@@ -460,6 +464,7 @@ pub fn median_line(p1: Point, p2: Point) -> Drawable {
         },
         color: Color { r: 0, g: 0, b: 0 },
         width: 1.0,
+        already_drawn: false,
     }
 }
 
@@ -506,6 +511,7 @@ pub fn rotate_line(line: Drawable, point: Point, angle: f32) -> Drawable {
         },
         color: line.color,
         width: line.width,
+        already_drawn: false,
     }
 }
 
@@ -559,6 +565,7 @@ pub fn tangent_lines_to_circle(point: Point, circle: Drawable) -> Option<(Drawab
             },
             color: circle.color,
             width: circle.width,
+            already_drawn: false,
         },
         point,
         angle,
@@ -613,5 +620,6 @@ pub fn circle_from_three_points(p1: Point, p2: Point, p3: Point) -> Drawable {
         point2: p1,
         color: Color { r: 0, g: 0, b: 0 },
         width: 1.0,
+        already_drawn: false,
     }
 }
