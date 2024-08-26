@@ -610,6 +610,17 @@ pub fn circle_center_from_three_points(p1: Point, p2: Point, p3: Point) -> Point
     }
 }
 
+/// Compute a circle from three points
+/// 
+/// # Arguments
+/// 
+/// * `p1` - The first point
+/// * `p2` - The second point
+/// * `p3` - The third point
+/// 
+/// # Returns
+/// 
+/// The circle
 pub fn circle_from_three_points(p1: Point, p2: Point, p3: Point) -> Drawable {
     let center = circle_center_from_three_points(p1, p2, p3);
 
