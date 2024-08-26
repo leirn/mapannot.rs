@@ -9,7 +9,7 @@ use rendering::{Color, DrawableType, Point, Renderer};
 slint::include_modules!();
 
 fn main() -> Result<(), slint::PlatformError> {
-    env_logger::init();
+    env_logger::builder().format_timestamp_millis().init();
 
     let mut renderer = Renderer::new("data/chouette/989.jpg");
     let mut renderer_temp = renderer.clone();
