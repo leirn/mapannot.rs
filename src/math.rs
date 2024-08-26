@@ -374,7 +374,7 @@ pub fn parallel_line(point: Point, line: Drawable) -> Drawable {
             point2: Point { x: point.x, y: 100 },
             color: line.color,
             width: line.width,
-            already_drawn: false,
+            ..Default::default()
         };
     }
 
@@ -393,7 +393,7 @@ pub fn parallel_line(point: Point, line: Drawable) -> Drawable {
         point2: Point { x: x2, y: y2 },
         color: line.color,
         width: line.width,
-        already_drawn: false,
+        ..Default::default()
     }
 }
 
@@ -416,7 +416,7 @@ pub fn perpendicular_line(point: Point, line: Drawable) -> Drawable {
             point2: Point { x: point.x, y: 100 },
             color: line.color,
             width: line.width,
-            already_drawn: false,
+            ..Default::default()
         };
     }
 
@@ -434,9 +434,8 @@ pub fn perpendicular_line(point: Point, line: Drawable) -> Drawable {
         object_type: DrawableType::Line,
         point1: Point { x: x1, y: y1 },
         point2: Point { x: x2, y: y2 },
-        color: Color { r: 0, g: 0, b: 0 },
         width: line.width,
-        already_drawn: false,
+        ..Default::default()
     }
 }
 
@@ -462,9 +461,8 @@ pub fn median_line(p1: Point, p2: Point) -> Drawable {
             x: x + (p2.y - p1.y),
             y: y + (p1.x - p2.x),
         },
-        color: Color { r: 0, g: 0, b: 0 },
         width: 1.0,
-        already_drawn: false,
+        ..Default::default()
     }
 }
 
@@ -511,7 +509,7 @@ pub fn rotate_line(line: Drawable, point: Point, angle: f32) -> Drawable {
         },
         color: line.color,
         width: line.width,
-        already_drawn: false,
+        ..Default::default()
     }
 }
 
@@ -556,7 +554,6 @@ pub fn tangent_lines_to_circle(point: Point, circle: Drawable) -> Option<(Drawab
 
     Some(get_lines_from_angles(
         Drawable {
-            id: 0,
             object_type: DrawableType::Line,
             point1: center,
             point2: Point {
@@ -565,7 +562,7 @@ pub fn tangent_lines_to_circle(point: Point, circle: Drawable) -> Option<(Drawab
             },
             color: circle.color,
             width: circle.width,
-            already_drawn: false,
+            ..Default::default()
         },
         point,
         angle,
@@ -625,12 +622,10 @@ pub fn circle_from_three_points(p1: Point, p2: Point, p3: Point) -> Drawable {
     let center = circle_center_from_three_points(p1, p2, p3);
 
     Drawable {
-        id: 0,
         object_type: DrawableType::Circle,
         point1: center,
         point2: p1,
-        color: Color { r: 0, g: 0, b: 0 },
         width: 1.0,
-        already_drawn: false,
+        ..Default::default()
     }
 }

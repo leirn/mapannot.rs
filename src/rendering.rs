@@ -1,11 +1,14 @@
+use std::default;
+
 use slint::{Image, Rgba8Pixel, SharedPixelBuffer};
 
 use crate::math::{distance, find_line_extreme_coordinates};
 use log::{debug, warn};
 
 /// Represents the type of a drawable object that can be rendered on the map
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub enum DrawableType {
+    #[default]
     Point,
     Segment,
     HalfLine,
@@ -14,14 +17,14 @@ pub enum DrawableType {
 }
 
 /// Represents a point in 2D space with x and y coordinates
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct Point {
     pub x: i32,
     pub y: i32,
 }
 
 /// Represents a color with red, green, and blue components
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct Color {
     pub r: u8,
     pub g: u8,
@@ -29,7 +32,7 @@ pub struct Color {
 }
 
 /// Represents a drawable object that can be rendered on the map
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct Drawable {
     pub id: i32,
     pub object_type: DrawableType,
@@ -38,6 +41,7 @@ pub struct Drawable {
     pub color: Color,
     pub width: f32,
     pub already_drawn: bool,
+    pub listview_id: i32,
 }
 
 /// Implements a generator for generating unique identifiers for entities
@@ -140,7 +144,7 @@ impl Renderer {
                 .unwrap();
 
         let mut bg_pixel_buffer = SharedPixelBuffer::<Rgba8Pixel>::new(image_width, image_height);
-        let overlay_pixel_buffer = SharedPixelBuffer::<Rgba8Pixel>::new(1, 1);
+        let overlay_pixel_buffer = SharedPixelBuffer::<Rgba8Pixel>::new(image_width, image_height);
         log::debug!("Map pixmap created");
 
         let mut pixmap = tiny_skia::PixmapMut::from_bytes(
@@ -163,6 +167,12 @@ impl Renderer {
         }
     }
 
+    /// Adds a layer to the map with the specified image file, position, and transparency.
+    /// # Arguments
+    /// * `file` - The path to the image file
+    /// * `x` - The x-coordinate of the layer
+    /// * `y` - The y-coordinate of the layer
+    /// * `transparency` - The transparency of the layer
     pub fn add_layer(&mut self, file: &str, x: i32, y: i32, transparency: f32) {
         let image = image::open(file).unwrap();
         let image = image.to_rgba8();
@@ -180,12 +190,14 @@ impl Renderer {
         self.layers.push(layer);
     }
 
+    /// Adds a drawable object to the map.
     pub fn add_drawable(&mut self, mut drawable: Drawable) {
         drawable.id = self.entity_id_generator.get_id();
         drawable.already_drawn = false;
         self.drawables.push(drawable);
     }
 
+    /// Adds a drawable object to the map with the specified values.
     pub fn add_drawable_by_values(
         &mut self,
         object_type: DrawableType,
@@ -201,20 +213,32 @@ impl Renderer {
             point2,
             color,
             width,
-            already_drawn: false,
+            ..Default::default()
         };
         self.drawables.push(d);
     }
 
+    /// Removes a drawable object from the map by its identifier.
     pub fn remove_drawable(&mut self, id: i32) {
         self.drawables.retain(|d| d.id != id);
         self.discard_overlay = true;
     }
 
+    /// Retrieve the list of drawables
     pub fn get_drawables(&self) -> Vec<Drawable> {
         self.drawables.clone()
     }
 
+    /// Set listview id for a drawable
+    pub fn set_listview_id(&mut self, id: i32, listview_id: i32) {
+        for draw in self.drawables.iter_mut() {
+            if draw.id == id {
+                draw.listview_id = listview_id;
+            }
+        }
+    }
+
+    /// Generate the background image
     pub fn render_background(&mut self) -> Option<Image> {
         // if !self.to_be_rendered {
         //     return None;
@@ -260,6 +284,7 @@ impl Renderer {
         Some(Image::from_rgba8_premultiplied(pixel_buffer))
     }
 
+    /// Generate the overlay image
     pub fn render_overlay(&mut self, zoom: f32) -> Option<Image> {
         log::debug!("Entering render overlay");
         if !self.discard_overlay {
@@ -271,32 +296,25 @@ impl Renderer {
                 log::debug!("Overlay is already rendered");
                 return None;
             }
-        } else {
-            log::debug!("Discarding overlay");
-            for draw in self.drawables.iter_mut() {
-                draw.already_drawn = false;
-            }
-            self.overlay_pixel_buffer =
-                SharedPixelBuffer::<Rgba8Pixel>::new(self.image_width, self.image_height);
         }
 
         log::debug!("Get sharepixel buffer");
         let data = self.overlay_pixel_buffer.make_mut_bytes();
         log::debug!("Creating pixmap");
 
-        let mut pixmap = tiny_skia::PixmapMut::from_bytes(
-            data,
-            self.image_width,
-            self.image_height,
-        )
-        .unwrap();
+        let mut pixmap =
+            tiny_skia::PixmapMut::from_bytes(data, self.image_width, self.image_height).unwrap();
 
         if self.discard_overlay {
+            log::debug!("Discarding overlay");
+            for draw in self.drawables.iter_mut() {
+                draw.already_drawn = false;
+            }
             pixmap.fill(tiny_skia::Color::TRANSPARENT);
         }
 
         log::debug!("Pixmap initialized");
-        
+
         // add all drawables to the pixmap
         for draw in self.drawables.iter_mut() {
             if draw.already_drawn {
