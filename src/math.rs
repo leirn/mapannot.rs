@@ -1,6 +1,6 @@
 use log::debug;
 
-use crate::rendering::{Color, Drawable, DrawableType, Point};
+use crate::rendering::{Drawable, DrawableType, Point};
 
 /// Calculate the distance between two points
 ///

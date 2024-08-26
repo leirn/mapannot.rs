@@ -1,5 +1,3 @@
-use std::default;
-
 use slint::{Image, Rgba8Pixel, SharedPixelBuffer};
 
 use crate::math::{distance, find_line_extreme_coordinates};
