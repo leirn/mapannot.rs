@@ -3,6 +3,7 @@ use slint::{Image, Rgba8Pixel, SharedPixelBuffer};
 use crate::math::{distance, find_line_extreme_coordinates};
 use log::{debug, warn};
 
+/// Represents the type of a drawable object that can be rendered on the map
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum DrawableType {
     Point,
@@ -11,18 +12,23 @@ pub enum DrawableType {
     Line,
     Circle,
 }
+
+/// Represents a point in 2D space with x and y coordinates
 #[derive(Clone, Copy, Debug)]
 pub struct Point {
     pub x: i32,
     pub y: i32,
 }
 
+/// Represents a color with red, green, and blue components
 #[derive(Clone, Copy, Debug)]
 pub struct Color {
     pub r: u8,
     pub g: u8,
     pub b: u8,
 }
+
+/// Represents a drawable object that can be rendered on the map
 #[derive(Clone, Copy, Debug)]
 pub struct Drawable {
     pub id: i32,
@@ -34,11 +40,13 @@ pub struct Drawable {
     pub already_drawn: bool,
 }
 
+/// Implements a generator for generating unique identifiers for entities
 #[derive(Clone, Copy, Debug)]
 struct IdGenerator {
     id: i32,
 }
 
+/// Represents a layer that can be added to the map
 #[derive(Clone, Debug)]
 struct Layer {
     _image_height: u32,
@@ -50,10 +58,15 @@ struct Layer {
 }
 
 impl IdGenerator {
+    /// Creates a new `IdGenerator` with an initial identifier of 0
     fn new() -> IdGenerator {
         IdGenerator { id: 0 }
     }
 
+    /// Generates a new unique identifier
+    /// Increments the identifier by 1 and returns the new identifier
+    /// # Returns
+    /// The new unique identifier
     fn get_id(&mut self) -> i32 {
         self.id += 1;
         log::debug!("New id: {}", self.id);
