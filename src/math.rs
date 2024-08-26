@@ -629,3 +629,267 @@ pub fn circle_from_three_points(p1: Point, p2: Point, p3: Point) -> Drawable {
         ..Default::default()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::math::*;
+
+    #[test]
+    fn test_distance() {
+        let p1 = Point { x: 0, y: 0 };
+        let p2 = Point { x: 3, y: 4 };
+        assert_eq!(distance(p1, p2), 5.0);
+    }
+
+    #[test]
+    fn test_angle_between() {
+        let line1 = Drawable {
+            object_type: DrawableType::Line,
+            point1: Point { x: 0, y: 0 },
+            point2: Point { x: 1, y: 1 },
+            ..Default::default()
+        };
+        let line2 = Drawable {
+            object_type: DrawableType::Line,
+            point1: Point { x: 0, y: 0 },
+            point2: Point { x: -1, y: 1 },
+            ..Default::default()
+        };
+        assert_eq!(angle_between(line1, line2), std::f32::consts::FRAC_PI_2);
+    }
+
+    #[test]
+    fn test_perpendicular_distance() {
+        let p = Point { x: 0, y: 0 };
+        let line = Drawable {
+            object_type: DrawableType::Line,
+            point1: Point { x: 1, y: 1 },
+            point2: Point { x: 3, y: 3 },
+            ..Default::default()
+        };
+        assert_eq!(perpendicular_distance(p, line), 0.0);
+    }
+
+    #[test]
+    fn test_distance_to_segment() {
+        let point = Point { x: 0, y: 0 };
+        let segment = Drawable {
+            object_type: DrawableType::Segment,
+            point1: Point { x: 1, y: 1 },
+            point2: Point { x: 3, y: 3 },
+            ..Default::default()
+        };
+        assert_eq!(distance_to_segment(point, segment), 0.0);
+    }
+
+    #[test]
+    fn test_distance_to_half_line() {
+        let point = Point { x: 0, y: 0 };
+        let halfline = Drawable {
+            object_type: DrawableType::HalfLine,
+            point1: Point { x: 1, y: 1 },
+            point2: Point { x: 3, y: 3 },
+            ..Default::default()
+        };
+        assert_eq!(distance_to_half_line(point, halfline), 0.0);
+    }
+
+    #[test]
+    fn test_closest_line() {
+        let point = Point { x: 0, y: 0 };
+        let lines = vec![
+            Drawable {
+                object_type: DrawableType::Line,
+                point1: Point { x: 1, y: 1 },
+                point2: Point { x: 3, y: 3 },
+                ..Default::default()
+            },
+            Drawable {
+                object_type: DrawableType::Segment,
+                point1: Point { x: 2, y: 2 },
+                point2: Point { x: 4, y: 2 },
+                ..Default::default()
+            },
+            Drawable {
+                object_type: DrawableType::HalfLine,
+                point1: Point { x: 5, y: 3 },
+                point2: Point { x: 5, y: 5 },
+                ..Default::default()
+            },
+        ];
+        let closest_line = closest_line(point, lines);
+        assert_eq!(closest_line.unwrap().object_type, DrawableType::Line);
+    }
+
+    #[test]
+    fn test_find_line_extreme_coordinates() {
+        let p1 = Point { x: 0, y: 0 };
+        let p2 = Point { x: 2, y: 4 };
+        let x_min = -10.0;
+        let x_max = 10.0;
+        let y_min = -10.0;
+        let y_max = 10.0;
+        let (extreme1, extreme2) = find_line_extreme_coordinates(p1, p2, x_min, x_max, y_min, y_max);
+        assert_eq!(extreme1.x, -5);
+        assert_eq!(extreme1.y, -10);
+        assert_eq!(extreme2.x, 5);
+        assert_eq!(extreme2.y, 10);
+    }
+
+    #[test]
+    fn test_closest_circle() {
+        let point = Point { x: 0, y: 0 };
+        let circles = vec![
+            Drawable {
+                object_type: DrawableType::Circle,
+                point1: Point { x: 0, y: 0 },
+                point2: Point { x: 3, y: 0 },
+                ..Default::default()
+            },
+            Drawable {
+                object_type: DrawableType::Circle,
+                point1: Point { x: 5, y: 5 },
+                point2: Point { x: 8, y: 5 },
+                ..Default::default()
+            },
+        ];
+        let closest_circle = closest_circle(point, circles);
+        assert_eq!(closest_circle.unwrap().object_type, DrawableType::Circle);
+    }
+
+    #[test]
+    fn test_closest_point() {
+        let point = Point { x: 0, y: 0 };
+        let points = vec![
+            Drawable {
+                object_type: DrawableType::Point,
+                point1: Point { x: 1, y: 1 },
+                ..Default::default()
+            },
+            Drawable {
+                object_type: DrawableType::Point,
+                point1: Point { x: 2, y: 2 },
+                ..Default::default()
+            },
+        ];
+        let closest_point = _closest_point(point, points);
+        assert_eq!(closest_point.unwrap().object_type, DrawableType::Point);
+    }
+
+    #[test]
+    fn test_closest_object() {
+        let point = Point { x: 0, y: 0 };
+        let objects = vec![
+            Drawable {
+                object_type: DrawableType::Line,
+                point1: Point { x: 1, y: 1 },
+                point2: Point { x: 3, y: 3 },
+                ..Default::default()
+            },
+            Drawable {
+                object_type: DrawableType::Circle,
+                point1: Point { x: 3, y: 3 },
+                point2: Point { x: 3, y: 2 },
+                ..Default::default()
+            },
+        ];
+        let closest_object = closest_object(point, objects);
+        assert_eq!(closest_object.unwrap().object_type, DrawableType::Line);
+    }
+
+    #[test]
+    fn test_parallel_line() {
+        let point = Point { x: 0, y: 0 };
+        let line = Drawable {
+            object_type: DrawableType::Line,
+            point1: Point { x: 1, y: 1 },
+            point2: Point { x: 3, y: 3 },
+            ..Default::default()
+        };
+        let parallel_line = parallel_line(point, line);
+        assert_eq!(parallel_line.object_type, DrawableType::Line);
+    }
+
+    #[test]
+    fn test_perpendicular_line() {
+        let point = Point { x: 0, y: 0 };
+        let line = Drawable {
+            object_type: DrawableType::Line,
+            point1: Point { x: 1, y: 1 },
+            point2: Point { x: 3, y: 3 },
+            ..Default::default()
+        };
+        let perpendicular_line = perpendicular_line(point, line);
+        assert_eq!(perpendicular_line.object_type, DrawableType::Line);
+    }
+
+    #[test]
+    fn test_median_line() {
+        let p1 = Point { x: 0, y: 0 };
+        let p2 = Point { x: 3, y: 4 };
+        let median_line = median_line(p1, p2);
+        assert_eq!(median_line.object_type, DrawableType::Line);
+    }
+
+    #[test]
+    fn test_rotate_line() {
+        let line = Drawable {
+            object_type: DrawableType::Line,
+            point1: Point { x: 1, y: 1 },
+            point2: Point { x: 3, y: 3 },
+            ..Default::default()
+        };
+        let point = Point { x: 0, y: 0 };
+        let angle = 45.0;
+        let rotated_line = rotate_line(line, point, angle);
+        assert_eq!(rotated_line.object_type, DrawableType::Line);
+    }
+
+    #[test]
+    fn test_get_lines_from_angles() {
+        let line = Drawable {
+            object_type: DrawableType::Line,
+            point1: Point { x: 1, y: 1 },
+            point2: Point { x: 3, y: 3 },
+            ..Default::default()
+        };
+        let point = Point { x: 0, y: 0 };
+        let angle = 45.0;
+        let (line1, line2) = get_lines_from_angles(line, point, angle);
+        assert_eq!(line1.object_type, DrawableType::Line);
+        assert_eq!(line2.object_type, DrawableType::Line);
+    }
+
+    #[test]
+    fn test_tangent_lines_to_circle() {
+        let point = Point { x: -5, y: 0 };
+        let circle = Drawable {
+            object_type: DrawableType::Circle,
+            point1: Point { x: 0, y: 0 },
+            point2: Point { x: 3, y: 0 },
+            ..Default::default()
+        };
+        let tangent_lines = tangent_lines_to_circle(point, circle);
+        assert_eq!(tangent_lines.unwrap().0.object_type, DrawableType::Line);
+        assert_eq!(tangent_lines.unwrap().1.object_type, DrawableType::Line);
+    }
+
+    #[test]
+    fn test_circle_center_from_three_points() {
+        let p1 = Point { x: 0, y: 0 };
+        let p2 = Point { x: 3, y: 0 };
+        let p3 = Point { x: 0, y: 3 };
+        let center = circle_center_from_three_points(p1, p2, p3);
+        assert_eq!(center.x, 1);
+        assert_eq!(center.y, 1);
+    }
+
+    #[test]
+    fn test_circle_from_three_points() {
+        let p1 = Point { x: 0, y: 0 };
+        let p2 = Point { x: 3, y: 0 };
+        let p3 = Point { x: 0, y: 3 };
+        let circle = circle_from_three_points(p1, p2, p3);
+        assert_eq!(circle.object_type, DrawableType::Circle);
+    }
+}
