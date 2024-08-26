@@ -244,7 +244,7 @@ impl Renderer {
         // self.to_be_rendered = false;
         log::debug!("Entering render image");
         let mut pixel_buffer = self.bg_pixel_buffer.clone();
-        log::debug!("Pixmel buffer cloned");
+        log::debug!("Pixel buffer cloned");
         let mut pixmap = tiny_skia::PixmapMut::from_bytes(
             pixel_buffer.make_mut_bytes(),
             self.image_width,
