@@ -1,3 +1,5 @@
+use log::debug;
+
 use crate::rendering::{Color, Drawable, DrawableType, Point};
 
 /// Calculate the distance between two points
@@ -459,4 +461,106 @@ pub fn median_line(p1: Point, p2: Point) -> Drawable {
         color: Color { r: 0, g: 0, b: 0 },
         width: 1.0,
     }
+}
+
+/// Rotate a line coordinates around a point from an angle in degrees
+///
+/// # Arguments
+///
+/// * `line` - The line to rotate
+/// * `point` - The point to rotate around
+/// * `angle` - The angle in degrees
+///
+/// # Returns
+///
+/// The rotated line
+pub fn rotate_line(line: Drawable, point: Point, angle: f32) -> Drawable {
+
+    debug!("Angle to rotate : {}", angle);
+
+    let d1 = distance(point, line.point1);
+    let d2 = distance(point, line.point2);
+    let (x, y) = if d1 > d2 {
+        (line.point1.x, line.point1.y)
+    }
+    else {
+        (line.point2.x, line.point2.y)
+    };
+
+    let x1 = point.x as f32 - x as f32;
+    let y1 = point.y as f32 - y as f32;
+
+    let x2 = x1 * angle.to_radians().cos() - y1 * angle.to_radians().sin();
+    let y2 = x1 * angle.to_radians().sin() + y1 * angle.to_radians().cos();
+
+    Drawable {
+        id: 0,
+        object_type: DrawableType::Line,
+        point1: Point {
+            x: point.x + x2 as i32,
+            y: point.y + y2 as i32,
+        },
+        point2: Point {
+            x: point.x,
+            y: point.y,
+        },
+        color: line.color,
+        width: line.width,
+    }
+}
+
+/// Get the two lines from a line and an angle
+///
+/// # Arguments
+///
+/// * `line` - The line
+/// * `angle` - The angle
+///
+/// # Returns
+///
+/// The two lines
+pub fn get_lines_from_angles(line: Drawable, point: Point, angle: f32) -> (Drawable, Drawable) {
+    (
+        rotate_line(line, point, angle),
+        rotate_line(line, point, -angle),
+    )
+}
+
+/// Compute the two lines that tanget to a circle from a point
+/// 
+/// # Arguments
+/// 
+/// * `point` - The point
+/// * `circle` - The circle
+/// 
+/// # Returns
+/// 
+/// The two lines
+pub fn tangent_lines_to_circle(point: Point, circle: Drawable) -> Option<(Drawable, Drawable)> {
+    let radius = distance(circle.point1, circle.point2);
+    let center = circle.point1;
+
+    let distance_to_center = distance(point, center);
+
+    if distance_to_center < radius as f32 {
+        return None;
+    }
+
+    let angle = (radius as f32 / distance_to_center as f32).asin().to_degrees();
+
+    Some(get_lines_from_angles(
+        Drawable {
+            id: 0,
+            object_type: DrawableType::Line,
+            point1: center,
+            point2: Point {
+                x: center.x + radius as i32,
+                y: center.y,
+            },
+            color: circle.color,
+            width: circle.width,
+        },
+        point,
+        angle,
+    ))
 }
