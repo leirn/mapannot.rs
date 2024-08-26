@@ -1,8 +1,7 @@
-use image;
 use slint::{Image, Rgba8Pixel, SharedPixelBuffer};
-use tiny_skia;
 
 use crate::math::{distance, find_line_extreme_coordinates};
+use log::warn;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum DrawableType {
@@ -34,10 +33,19 @@ pub struct Drawable {
     pub width: f32,
 }
 
-
 #[derive(Clone, Copy, Debug)]
 struct IdGenerator {
     id: i32,
+}
+
+#[derive(Clone, Debug)]
+struct Layer {
+    _image_height: u32,
+    _image_width: u32,
+    x: i32,
+    y: i32,
+    transparency: f32,
+    image_data: Vec<u8>,
 }
 
 impl IdGenerator {
@@ -56,19 +64,76 @@ impl IdGenerator {
 pub struct Renderer {
     drawables: Vec<Drawable>,
     entity_id_generator: IdGenerator,
+    image_height: u32,
+    image_width: u32,
+    pixel_buffer: SharedPixelBuffer<Rgba8Pixel>,
+    to_be_rendered: bool,
+    layers: Vec<Layer>,
 }
 
 impl Renderer {
     pub fn new() -> Renderer {
+        let image = image::open("data/chouette/500.png").unwrap();
+        let image = image.to_rgba8();
+        let image_width = image.width();
+        let image_height = image.height();
+        let image_data = image.into_raw();
+        let layer = Layer {
+            _image_height: image_height,
+            _image_width: image_width,
+            x: 1000,
+            y: 3000,
+            transparency: 0.8,
+            image_data,
+        };
+
+        // open image from disk and add to pixel buffer
+        let image = image::open("data/chouette/989.jpg").unwrap();
+        let image = image.to_rgba8();
+        let image_width = image.width();
+        let image_height = image.height();
+        let mut image_data = image.into_raw();
+
+        let paint = tiny_skia::PixmapPaint {
+            opacity: 1.,
+            blend_mode: tiny_skia::BlendMode::Source,
+            quality: tiny_skia::FilterQuality::Nearest,
+        };
+
+        let map_pixmap =
+            tiny_skia::PixmapMut::from_bytes(image_data.as_mut(), image_width, image_height)
+                .unwrap();
+
+        let mut pixel_buffer = SharedPixelBuffer::<Rgba8Pixel>::new(image_width, image_height);
+        log::debug!("Map pixmap created");
+
+        let mut pixmap = tiny_skia::PixmapMut::from_bytes(
+            pixel_buffer.make_mut_bytes(),
+            image_width,
+            image_height,
+        )
+        .unwrap();
+        pixmap.draw_pixmap(0, 0, map_pixmap.as_ref(), &paint, Default::default(), None);
+
         Renderer {
             drawables: Vec::new(),
             entity_id_generator: IdGenerator::new(),
+            image_height,
+            image_width,
+            pixel_buffer,
+            to_be_rendered: false,
+            layers: vec![layer],
         }
+    }
+
+    pub fn force_render(&mut self) {
+        self.to_be_rendered = true;
     }
 
     pub fn add_drawable(&mut self, mut drawable: Drawable) {
         drawable.id = self.entity_id_generator.get_id();
         self.drawables.push(drawable);
+        self.to_be_rendered = true;
     }
 
     pub fn add_drawable_by_values(
@@ -81,50 +146,92 @@ impl Renderer {
     ) {
         let d = Drawable {
             id: self.entity_id_generator.get_id(),
-            object_type: object_type,
-            point1: point1,
-            point2: point2,
-            color: color,
-            width: width,
+            object_type,
+            point1,
+            point2,
+            color,
+            width,
         };
         self.drawables.push(d);
+        self.to_be_rendered = true;
     }
 
     pub fn remove_drawable(&mut self, id: i32) {
         self.drawables.retain(|d| d.id != id);
+        self.to_be_rendered = true;
     }
 
     pub fn get_drawables(&self) -> Vec<Drawable> {
         self.drawables.clone()
     }
 
-    pub fn render_image(&mut self) -> Image {
+    pub fn render_background(&mut self) -> Option<Image> {
+        // if !self.to_be_rendered {
+        //     return None;
+        // }
+        // self.to_be_rendered = false;
         log::debug!("Entering render image");
-        let mut pixel_buffer = SharedPixelBuffer::<Rgba8Pixel>::new(1000, 1000);
-        let width = pixel_buffer.width();
-        let height = pixel_buffer.height();
-        let mut pixmap =
-            tiny_skia::PixmapMut::from_bytes(pixel_buffer.make_mut_bytes(), width, height).unwrap();
+        let mut pixel_buffer = self.pixel_buffer.clone();
+        log::debug!("Pixmel buffer cloned");
+        let mut pixmap = tiny_skia::PixmapMut::from_bytes(
+            pixel_buffer.make_mut_bytes(),
+            self.image_width,
+            self.image_height,
+        )
+        .unwrap();
+
+        for layer in self.layers.iter_mut() {
+            let layer_pixmap = tiny_skia::PixmapMut::from_bytes(
+                layer.image_data.as_mut(),
+                self.image_width,
+                self.image_height,
+            );
+            if layer_pixmap.is_none() {
+                warn!("Layer pixmap is not created");
+                continue;
+            }
+            let paint = tiny_skia::PixmapPaint {
+                opacity: layer.transparency,
+                blend_mode: tiny_skia::BlendMode::Source,
+                quality: tiny_skia::FilterQuality::Bicubic,
+            };
+            pixmap.draw_pixmap(
+                layer.x,
+                layer.y,
+                layer_pixmap.unwrap().as_ref(),
+                &paint,
+                Default::default(),
+                None,
+            );
+        }
+
+        log::debug!("Pixmap initialized");
+        log::debug!("pixmap ready for drawing");
+        Some(Image::from_rgba8_premultiplied(pixel_buffer))
+    }
+
+    pub fn render_overlay(&mut self) -> Option<Image> {
+        if !self.to_be_rendered {
+            return None;
+        }
+
+        let mut pixel_buffer =
+            SharedPixelBuffer::<Rgba8Pixel>::new(self.image_width, self.image_height);
+
+        self.to_be_rendered = false;
+        log::debug!("Entering render image");
+        log::debug!("Pixmel buffer cloned");
+        let mut pixmap = tiny_skia::PixmapMut::from_bytes(
+            pixel_buffer.make_mut_bytes(),
+            self.image_width,
+            self.image_height,
+        )
+        .unwrap();
+
         pixmap.fill(tiny_skia::Color::TRANSPARENT);
 
-        // open image from disk and add to pixel buffer
-        let image = image::open("data/chouette/500.png").unwrap();
-        let image = image.to_rgba8();
-        let image_width = image.width();
-        let image_height = image.height();
-        let mut image_data = image.into_raw();
-
-        let map_pixmap =
-            tiny_skia::PixmapMut::from_bytes(image_data.as_mut(), image_width, image_height)
-                .unwrap();
-
-        let paint = tiny_skia::PixmapPaint {
-            opacity: 1.,
-            blend_mode: tiny_skia::BlendMode::Source,
-            quality: tiny_skia::FilterQuality::Bicubic,
-        };
-
-        pixmap.draw_pixmap(0, 0, map_pixmap.as_ref(), &paint, Default::default(), None);
+        log::debug!("Pixmap initialized");
+        log::debug!("pixmap ready for drawing");
 
         // add all drawables to the pixmap
         for draw in self.drawables.clone() {
@@ -133,8 +240,7 @@ impl Renderer {
             paint.set_color_rgba8(draw.color.r, draw.color.g, draw.color.b, 255);
             paint.anti_alias = true;
 
-            let mut stroke = tiny_skia::Stroke::default();
-            stroke.width = draw.width;
+            let stroke = tiny_skia::Stroke { width: draw.width, ..Default::default() };
 
             match draw.object_type {
                 DrawableType::Circle => {
@@ -169,9 +275,9 @@ impl Renderer {
                         draw.point1,
                         draw.point2,
                         0.,
-                        width as f32,
+                        self.image_width as f32,
                         0.,
-                        height as f32,
+                        self.image_height as f32,
                     );
                     let mut pb = tiny_skia::PathBuilder::new();
                     if draw.object_type == DrawableType::HalfLine {
@@ -195,6 +301,7 @@ impl Renderer {
             };
         }
 
-        Image::from_rgba8_premultiplied(pixel_buffer)
+        log::debug!("End of rendering");
+        Some(Image::from_rgba8_premultiplied(pixel_buffer))
     }
 }

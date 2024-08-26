@@ -1,26 +1,24 @@
-import { Button, VerticalBox, HorizontalBox, StandardListView, Slider, LineEdit, StandardButton } from "std-widgets.slint";
+import { Button, VerticalBox, HorizontalBox, StandardListView, Slider, LineEdit, StandardButton, ScrollView } from "std-widgets.slint";
 
 export component AppWindow inherits Window {
     title: "Map Annontation in Rust";
     in-out property <int> current_action: 0;
     in-out property <string> contextual_text: "Welcome";
-    in-out property <int> counter: 42;
     in-out property <int> mouse_x: 42;
     in-out property <int> mouse_y: 42;
-
     in-out property <int> offset_x: 0;
     in-out property <int> offset_y: 0;
     in-out property <int> source_clip_when_pressed_x: 0;
     in-out property <int> source_clip_when_pressed_y: 0;
     in-out property <bool> move: false;
-
     in-out property <float> stroke_red: 42;
     in-out property <float> stroke_green: 185;
     in-out property <float> stroke_blue: 37;
     in-out property <brush> stroke_brush: rgb(root.stroke_red, root.stroke_green, root.stroke_blue);
-    in-out property <float> stroke_width: 4;
+    in-out property <float> stroke_width: 2;
     in-out property <image> map;
-    in-out property <float> m_per_px: 50000;
+    in-out property <image> overlay_image;
+    in-out property <float> m_per_px: 5000;
     in-out property <[StandardListViewItem]> item_list: [
         { text: "Blue" },
         { text: "Red" },
@@ -58,15 +56,16 @@ export component AppWindow inherits Window {
                     }
                 }
 
-                
                 Rectangle {
                     width: point.width;
                     height: 1px;
                     background: white;
                 }
+
                 Text {
                     text: "Circles";
                 }
+
                 Button {
                     text: "Cercle-centre-rayon";
                     clicked => {
@@ -96,15 +95,16 @@ export component AppWindow inherits Window {
                     }
                 }
 
-                
                 Rectangle {
                     width: point.width;
                     height: 1px;
                     background: white;
                 }
+
                 Text {
                     text: "Lines";
                 }
+
                 Button {
                     // Segment
                     text: "Segment";
@@ -175,9 +175,11 @@ export component AppWindow inherits Window {
                     height: 1px;
                     background: white;
                 }
+
                 Text {
                     text: "Measurements";
                 }
+
                 Button {
                     text: "Two points";
                     clicked => {
@@ -185,6 +187,7 @@ export component AppWindow inherits Window {
                         root.current_action = 15;
                     }
                 }
+
                 Button {
                     text: "Point to line";
                     clicked => {
@@ -192,6 +195,7 @@ export component AppWindow inherits Window {
                         root.current_action = 17;
                     }
                 }
+
                 Button {
                     text: "Angle";
                     clicked => {
@@ -199,6 +203,7 @@ export component AppWindow inherits Window {
                         root.current_action = 6;
                     }
                 }
+
                 Button {
                     text: "Radius";
                     clicked => {
@@ -206,6 +211,7 @@ export component AppWindow inherits Window {
                         root.current_action = 19;
                     }
                 }
+
                 Button {
                     text: "Define m/px";
                     clicked => {
@@ -218,9 +224,11 @@ export component AppWindow inherits Window {
                     height: 1px;
                     background: white;
                 }
+
                 Text {
                     text: "Divers";
                 }
+
                 Button {
                     // Color palette
                     text: "Palette";
@@ -241,65 +249,42 @@ export component AppWindow inherits Window {
                 }
             }
 
-            canva := Image {
-                source: map;
-                min-width: 800px;
-                min-height: 600px;    
-                preferred-width: 100%;
-                preferred-height: 100%;
-                horizontal-stretch: 1;
-                vertical-stretch: 1;
-                horizontal-tiling: ImageTiling.none;
-                vertical-tiling: ImageTiling.none;
-                area := TouchArea {
-                    width: parent.width;
-                    height: parent.height;
-                    clicked => {
-                        root.mouse_x = self.pressed-x / 1px;
-                        root.mouse_y = self.pressed-y / 1px;
-                        root.image_click();
+            scroll := ScrollView {
+                viewport-width: canva.width;
+                viewport-height: canva.height;
+                canva := Image {
+                    source: map;
+                    width: map.width * 1px;
+                    height: map.height * 1px;
+                    horizontal-tiling: ImageTiling.none;
+                    vertical-tiling: ImageTiling.none;
+                    overlay := Image {
+                        source: overlay_image;
+                        width: parent.width;
+                        height: parent.height;
                     }
-                    scroll-event(event) => {
-                        if root.move {
-                            return EventResult.reject;
-                        }
 
-                        if event.delta-y > 0 {
-                            parent.source-clip-x += parent.source.width / 10;
-                            parent.source-clip-y += parent.source.height / 10;
-                            parent.source-clip-width -= max(parent.source.width / 10, 0);
-                            parent.source-clip-height -= max(parent.source.height / 10, 0);
-                            root.m_per_px *= 1.1;
-                        } else {
-                            parent.source-clip-x -= max(parent.source.width / 10, 0);
-                            parent.source-clip-y -= max(parent.source.height / 10, 0);
-                            parent.source-clip-width += parent.source.width / 10;
-                            parent.source-clip-height += parent.source.height / 10;
+                    area := TouchArea {
+                        width: parent.width;
+                        height: parent.height;
+                        clicked => {
+                            root.mouse_x = parent.source-clip-x + (parent.source-clip-width * (self.pressed-x / 1px) / (parent.width / 1px));
+                            root.mouse_y = parent.source-clip-y + (parent.source-clip-height * (self.pressed-y / 1px) / (parent.height / 1px));
+                            root.image_click();
                         }
-                        return EventResult.accept;
-                    }
-                    moved => {
-                        if root.move{
-                            root.offset_x = self.pressed-x / 1px - self.mouse-x / 1px;
-                            root.offset_y = self.pressed-y / 1px - self.mouse-y / 1px;
-                            parent.source-clip-x = root.source_clip_when_pressed_x + root.offset_x;
-                            parent.source-clip-y = root.source_clip_when_pressed_y + root.offset_y;
-                        }
-                    }
-                    pointer-event(event) => {
-                        if event.button == PointerEventButton.left {
-                            if event.kind == PointerEventKind.down {
-                                root.move = true;
-                                self.mouse-cursor = MouseCursor.move;
-                                root.source_clip_when_pressed_x = parent.source-clip-x;
-                                root.source_clip_when_pressed_y = parent.source-clip-y;
+                        scroll-event(event) => {
+                            if ! event.modifiers.control {
+                                return EventResult.reject;
                             }
-                            if event.kind == PointerEventKind.up {
-                                root.move = false;
-                                self.mouse-cursor = MouseCursor.default;
+                            if event.delta-y > 0 {
+                                parent.width = min(parent.width * 1.1, map.width * 1px);
+                                parent.height = min(parent.height * 1.1, map.height * 1px);
+                            } else {
+                                parent.width = max(parent.width / 1.1, scroll.visible-width);
+                                parent.height = max(parent.height / 1.1, scroll.visible-height);
                             }
+                            return EventResult.accept;
                         }
-                        return EventResult.accept;
                     }
                 }
             }
@@ -317,6 +302,7 @@ export component AppWindow inherits Window {
             height: 1px;
             background: white;
         }
+
         Text {
             vertical-stretch: 0;
             height: 40px;

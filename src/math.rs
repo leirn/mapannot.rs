@@ -1,4 +1,4 @@
-use crate::rendering::{Drawable, DrawableType, Point, Color};
+use crate::rendering::{Color, Drawable, DrawableType, Point};
 
 /// Calculate the distance between two points
 ///
@@ -49,8 +49,7 @@ fn angle(p1: Point, p2: Point, p3: Point, p4: Point) -> f32 {
     let y2 = p4.y - p3.y;
     let dot = (x1 * x2 + y1 * y2) as f32;
     let det = (x1 * y2 - y1 * x2) as f32;
-    let angle = det.atan2(dot);
-    angle
+    det.atan2(dot)
 }
 
 /// Calculate the perpendicular distance from a point to a line segment
@@ -153,7 +152,7 @@ pub fn closest_line(point: Point, lines: Vec<Drawable>) -> Option<Drawable> {
 
         if distance < min_distance {
             min_distance = distance;
-            closest_line = Some(drawable.clone());
+            closest_line = Some(drawable);
         }
     }
 
@@ -275,7 +274,7 @@ pub fn closest_circle(point: Point, circles: Vec<Drawable>) -> Option<Drawable> 
 
         if distance < min_distance {
             min_distance = distance;
-            closest_circle = Some(drawable.clone());
+            closest_circle = Some(drawable);
         }
     }
 
@@ -308,7 +307,7 @@ pub fn _closest_point(point: Point, points: Vec<Drawable>) -> Option<Drawable> {
 
         if distance < min_distance {
             min_distance = distance;
-            closest_point = Some(drawable.clone());
+            closest_point = Some(drawable);
         }
     }
 
@@ -339,19 +338,15 @@ pub fn closest_object(point: Point, objects: Vec<Drawable>) -> Option<Drawable> 
             DrawableType::Point => distance(point, drawable.point1),
             // TODO : for segment and halfline, we should calculate the distance to the part that is actually drawn
             DrawableType::Line => perpendicular_distance(point, drawable),
-            DrawableType::Segment => {
-                distance_to_segment(point, drawable)
-            }
-            DrawableType::HalfLine => {
-                distance_to_half_line(point, drawable)
-            }
+            DrawableType::Segment => distance_to_segment(point, drawable),
+            DrawableType::HalfLine => distance_to_half_line(point, drawable),
         };
 
         log::debug!("Id: {}, Distance: {}", drawable.id, distance);
 
         if distance < min_distance {
             min_distance = distance;
-            closest_object = Some(drawable.clone());
+            closest_object = Some(drawable);
         }
     }
 
@@ -359,14 +354,14 @@ pub fn closest_object(point: Point, objects: Vec<Drawable>) -> Option<Drawable> 
 }
 
 /// Find the coordinates of a line parallel to a given line and passing through a specific point
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `point` - The specific point
 /// * `line` - The given line
-/// 
+///
 /// # Returns
-/// 
+///
 /// The coordinates of the line parallel to the given line and passing through the specific point
 pub fn parallel_line(point: Point, line: Drawable) -> Drawable {
     if line.point1.x == line.point2.x {
@@ -399,14 +394,14 @@ pub fn parallel_line(point: Point, line: Drawable) -> Drawable {
 }
 
 /// Find the coordinates of a line perpendicular to a given line and passing through a specific point
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `point` - The specific point
 /// * `line` - The given line
-/// 
+///
 /// # Returns
-/// 
+///
 /// The coordinates of the line perpendicular to the given line and passing through the specific point
 pub fn perpendicular_line(point: Point, line: Drawable) -> Drawable {
     if line.point1.x == line.point2.x {
@@ -440,14 +435,14 @@ pub fn perpendicular_line(point: Point, line: Drawable) -> Drawable {
 }
 
 /// Find the median line between two points
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `p1` - The first point
 /// * `p2` - The second point
-/// 
+///
 /// # Returns
-/// 
+///
 /// The median line between the two points
 pub fn median_line(p1: Point, p2: Point) -> Drawable {
     let x = (p1.x + p2.x) / 2;
@@ -456,8 +451,11 @@ pub fn median_line(p1: Point, p2: Point) -> Drawable {
     Drawable {
         id: 0,
         object_type: DrawableType::Line,
-        point1: Point { x: x, y: y },
-        point2: Point { x: x + (p2.y - p1.y), y: y + (p1.x - p2.x) },
+        point1: Point { x, y },
+        point2: Point {
+            x: x + (p2.y - p1.y),
+            y: y + (p1.x - p2.x),
+        },
         color: Color { r: 0, g: 0, b: 0 },
         width: 1.0,
     }
