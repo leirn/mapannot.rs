@@ -1,11 +1,48 @@
 import { Button, VerticalBox, HorizontalBox, StandardListView, Slider, LineEdit, StandardButton, ScrollView } from "std-widgets.slint";
 
+export enum NextAction {
+    None,
+    Vertical,
+    Horizontal,
+    Point,
+    Segment,
+    Segment2,
+    Line,
+    Line2,
+    HalfLine,
+    HalfLine2,
+    MeasureAngle,
+    MeasureAngle2,
+    Parallel,
+    Parallel2,
+    TwoPointsMedian,
+    TwoPointsMedian2,
+    Perpendicular,
+    Perpendicular2,
+    MeasureRadius,
+    MeasurePointToLine,
+    MeasurePointToLine2,
+    CenterAndEdge,
+    CenterAndEdge2,
+    CircleThreeEdgePoints,
+    CircleThreeEdgePoints2,
+    CircleThreeEdgePoints3,
+    MeasureTwoPoints,
+    MeasureTwoPoints2,
+    Tangent,
+    Tangent2,
+    Delete,
+    FromAngle,
+    FromAngle2,
+    CircleRadiusLength,
+}
+
 export component AppWindow inherits Window {
     title: "Map Annotation in Rust";
     preferred-height: 1024px;
     preferred-width: 1280px;
     icon: @image-url("icons/icon_256.png");
-    in-out property <int> current_action: 0;
+    in-out property <NextAction> current_action: None;
     in-out property <string> contextual_text: "Welcome";
     in-out property <int> mouse_x: 42;
     in-out property <int> mouse_y: 42;
@@ -42,7 +79,7 @@ export component AppWindow inherits Window {
                     text: "Point";
                     clicked => {
                         root.contextual_text = "Click on a point to draw a point";
-                        root.current_action = 3;
+                        root.current_action = NextAction.Point;
                     }
                 }
 
@@ -68,7 +105,7 @@ export component AppWindow inherits Window {
                     text: "Center and edge";
                     clicked => {
                         root.contextual_text = "Click on the circle center";
-                        root.current_action = 12;
+                        root.current_action = NextAction.CenterAndEdge;
                     }
                 }
 
@@ -76,7 +113,7 @@ export component AppWindow inherits Window {
                     text: "Three edge points";
                     clicked => {
                         root.contextual_text = "Click on the first point";
-                        root.current_action = 31;
+                        root.current_action = NextAction.CircleThreeEdgePoints;
                     }
                 }
 
@@ -96,7 +133,7 @@ export component AppWindow inherits Window {
                     icon: @image-url("icons/diagonal_line_32dp_E8EAED_FILL0_wght400_GRAD0_opsz40.png");
                     clicked => {
                         root.contextual_text = "Click on the first segment point";
-                        root.current_action = 4;
+                        root.current_action = NextAction.Segment;
                     }
                 }
 
@@ -104,7 +141,7 @@ export component AppWindow inherits Window {
                     text: "Line";
                     clicked => {
                         root.contextual_text = "Click on the first line point";
-                        root.current_action = 8;
+                        root.current_action = NextAction.Line;
                     }
                 }
 
@@ -112,7 +149,7 @@ export component AppWindow inherits Window {
                     text: "Half line";
                     clicked => {
                         root.contextual_text = "Click on the end point";
-                        root.current_action = 10;
+                        root.current_action = NextAction.HalfLine;
                     }
                 }
 
@@ -120,7 +157,7 @@ export component AppWindow inherits Window {
                     text: "Two points median";
                     clicked => {
                         root.contextual_text = "Click on the first point";
-                        root.current_action = 22;
+                        root.current_action = NextAction.TwoPointsMedian;
                     }
                 }
 
@@ -128,7 +165,7 @@ export component AppWindow inherits Window {
                     text: "Perpendicular";
                     clicked => {
                         root.contextual_text = "Click on a point the perpendicular line goes through";
-                        root.current_action = 24;
+                        root.current_action = NextAction.Perpendicular;
                     }
                 }
 
@@ -136,23 +173,23 @@ export component AppWindow inherits Window {
                     text: "Parallel";
                     clicked => {
                         root.contextual_text = "Click on a point the parallel line goes through";
-                        root.current_action = 20;
+                        root.current_action = NextAction.Parallel;
                     }
                 }
 
                 Button {
-                    text: "Verticale";
+                    text: "Vertical";
                     clicked => {
                         root.contextual_text = "Click on a point to draw a vertical line";
-                        root.current_action = 1;
+                        root.current_action = NextAction.Vertical;
                     }
                 }
 
                 Button {
-                    text: "Horizontale";
+                    text: "Horizontal";
                     clicked => {
                         root.contextual_text = "Click on a point to draw an horizontal line";
-                        root.current_action = 2;
+                        root.current_action = NextAction.Horizontal;
                     }
                 }
 
@@ -160,7 +197,7 @@ export component AppWindow inherits Window {
                     text: "Tangent";
                     clicked => {
                         root.contextual_text = "Click on a point the tangents will go through";
-                        root.current_action = 28;
+                        root.current_action = NextAction.Tangent;
                     }
                 }
 
@@ -186,7 +223,7 @@ export component AppWindow inherits Window {
                     text: "Two points";
                     clicked => {
                         root.contextual_text = "Click on the first point";
-                        root.current_action = 15;
+                        root.current_action = NextAction.MeasureTwoPoints;
                     }
                 }
 
@@ -194,7 +231,7 @@ export component AppWindow inherits Window {
                     text: "Point to line";
                     clicked => {
                         root.contextual_text = "Click on the point";
-                        root.current_action = 17;
+                        root.current_action = NextAction.MeasurePointToLine;
                     }
                 }
 
@@ -202,7 +239,7 @@ export component AppWindow inherits Window {
                     text: "Angle";
                     clicked => {
                         root.contextual_text = "Click on the first line";
-                        root.current_action = 6;
+                        root.current_action = NextAction.MeasureAngle;
                     }
                 }
 
@@ -210,7 +247,7 @@ export component AppWindow inherits Window {
                     text: "Radius";
                     clicked => {
                         root.contextual_text = "Click on a circle";
-                        root.current_action = 19;
+                        root.current_action = NextAction.MeasureRadius;
                     }
                 }
 
@@ -246,7 +283,7 @@ export component AppWindow inherits Window {
                     icon: @image-url("icons/delete_forever_32dp_E8EAED_FILL0_wght400_GRAD0_opsz40.png");
                     clicked => {
                         root.contextual_text = "Click on the item to delete";
-                        root.current_action = 14;
+                        root.current_action = NextAction.Delete;
                     }
                 }
             }
@@ -293,7 +330,7 @@ export component AppWindow inherits Window {
                 }
             }
 
-            drawable_list :=StandardListView {
+            drawable_list := StandardListView {
                 // Right menu bar
                 width: 150px;
                 model: item_list;
@@ -359,7 +396,7 @@ export component AppWindow inherits Window {
                     kind: ok;
                     clicked => {
                         root.contextual_text = "Click on a point the lines will go through";
-                        root.current_action = 26;
+                        root.current_action = NextAction.FromAngle;
                         angle_popup.close();
                     }
                 }
@@ -461,7 +498,7 @@ export component AppWindow inherits Window {
                     kind: ok;
                     clicked => {
                         root.contextual_text = "Click on the circle center";
-                        root.current_action = 30;
+                        root.current_action = NextAction.CircleRadiusLength;
                         radius_popup.close();
                     }
                 }
