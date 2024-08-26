@@ -1,6 +1,7 @@
 mod math;
 mod rendering;
 
+use log::debug;
 use slint::{SharedString, VecModel};
 
 use rendering::{Color, DrawableType, Point, Renderer};
@@ -235,9 +236,10 @@ fn main() -> Result<(), slint::PlatformError> {
                     next_action = 0;
                     let m_per_px = ui.get_m_per_px();
                     let distance = math::distance(standing_point, Point { x, y });
+                    debug!("Distance: {} px", distance);
                     format!(
-                        "Distance beetwen two points is {:.2} km",
-                        distance * m_per_px / 1000.
+                        "Distance beetwen two points is {:.2} km or {:.1} px",
+                        distance * m_per_px / 1000., distance
                     )
                 }
                 // Point to measure distance to line
@@ -345,6 +347,87 @@ fn main() -> Result<(), slint::PlatformError> {
                         }
                         None => "No line found".to_string(),
                     }
+                }
+                // Point the new lines will go through, computed from given angle
+                26 => {
+                    standing_point = Point { x, y };
+                    next_action = 27;
+                    "Click on a reference line".to_string()
+                }
+                // Line of reference for the new lines, computed from given angle
+                27 => {
+                    next_action = 0;
+                    let closest_line = math::closest_line(Point { x, y }, renderer.get_drawables());
+                    match closest_line {
+                        Some(closest_line) => {
+                            let drawable =
+                                math::parallel_line(standing_point, closest_line);
+
+                            let (mut line1, mut line2) = math::get_lines_from_angles(drawable, standing_point, ui.get_angle());
+
+                            let color = Color {
+                                r: red,
+                                g: green,
+                                b: blue,
+                            };
+
+                            line1.color = color;
+                            line1.width = width;
+                            renderer.add_drawable(line1);
+                            line2.color = color;
+                            line2.width = width;
+                            renderer.add_drawable(line2);
+                            "Lines added".to_string()
+                        }
+                        None => "No line found".to_string(),
+                    }
+                }
+                // Point the tangent linse will go through
+                28 => {
+                    standing_point = Point { x, y };
+                    next_action = 29;
+                    "Click on a line".to_string()
+                }
+                // Circle of reference for the tangent lines
+                29 => {
+                    next_action = 0;
+                    let closest_circle = math::closest_circle(Point { x, y }, renderer.get_drawables());
+                    match closest_circle {
+                        Some(closest_circle) => {
+                            if let Some((mut tangent1, mut tangent2)) =
+                                math::tangent_lines_to_circle(standing_point, closest_circle) {                            
+                                    let color = Color {
+                                        r: red,
+                                        g: green,
+                                        b: blue,
+                                    };
+        
+                                    tangent1.color = color;
+                                    tangent1.width = width;
+                                    renderer.add_drawable(tangent1);
+                                    tangent2.color = color;
+                                    tangent2.width = width;
+                                    renderer.add_drawable(tangent2);
+                                    "Tangent lines added".to_string()
+                                }
+                                else {
+                                    "Selected point is inside the circle".to_string()
+                                }
+                            
+                        }
+                        None => "No line found".to_string(),
+                    }
+                }
+                // Circle with center and radius in km
+                30 => {
+                    next_action = 0;
+                    let radius = (ui.get_radius() / ui.get_m_per_px() * 1_000.) as i32;
+                    renderer.add_drawable_by_values(DrawableType::Circle, Point { x, y }, Point { x: x + radius, y }, Color {
+                        r: red,
+                        g: green,
+                        b: blue,
+                    }, width);
+                    "Circle added".to_string()
                 }
                 _ => String::new(),
             };

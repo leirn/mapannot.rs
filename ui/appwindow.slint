@@ -2,6 +2,13 @@ import { Button, VerticalBox, HorizontalBox, StandardListView, Slider, LineEdit,
 
 export component AppWindow inherits Window {
     title: "Map Annontation in Rust";
+
+    preferred-height: 1024px;
+    preferred-width: 1280px;
+
+
+    icon: @image-url("icons/icon_256.png");
+
     in-out property <int> current_action: 0;
     in-out property <string> contextual_text: "Welcome";
     in-out property <int> mouse_x: 42;
@@ -16,9 +23,11 @@ export component AppWindow inherits Window {
     in-out property <float> stroke_blue: 37;
     in-out property <brush> stroke_brush: rgb(root.stroke_red, root.stroke_green, root.stroke_blue);
     in-out property <float> stroke_width: 2;
+    in-out property <float> angle: 30;
     in-out property <image> map;
     in-out property <image> overlay_image;
-    in-out property <float> m_per_px: 5000;
+    in-out property <float> m_per_px: 170;
+    in-out property <float> radius: 185;
     in-out property <[StandardListViewItem]> item_list: [
         { text: "Blue" },
         { text: "Red" },
@@ -48,14 +57,6 @@ export component AppWindow inherits Window {
                     }
                 }
 
-                Button {
-                    text: "Two points median";
-                    clicked => {
-                        root.contextual_text = "Click on the first point";
-                        root.current_action = 22;
-                    }
-                }
-
                 Rectangle {
                     width: point.width;
                     height: 1px;
@@ -67,14 +68,15 @@ export component AppWindow inherits Window {
                 }
 
                 Button {
-                    text: "Cercle-centre-rayon";
+                    text: "Radius length";
                     clicked => {
-                        root.contextual_text = "Not implemented yet";
+                        root.contextual_text = "Enter circle radius in popup";
+                        radius-popup.show();
                     }
                 }
 
                 Button {
-                    text: "Cercle-centre-point";
+                    text: "Center and edge";
                     clicked => {
                         root.contextual_text = "Click on the circle center";
                         root.current_action = 12;
@@ -132,6 +134,14 @@ export component AppWindow inherits Window {
                 }
 
                 Button {
+                    text: "Two points median";
+                    clicked => {
+                        root.contextual_text = "Click on the first point";
+                        root.current_action = 22;
+                    }
+                }
+
+                Button {
                     text: "Perpendicular";
                     clicked => {
                         root.contextual_text = "Click on a point the perpendicular line goes through";
@@ -166,7 +176,16 @@ export component AppWindow inherits Window {
                 Button {
                     text: "Tangent";
                     clicked => {
-                        root.contextual_text = "Not implemented yet";
+                        root.contextual_text = "Click on a point the tangents will go through";
+                        root.current_action = 28;
+                    }
+                }
+
+                Button {
+                    text: "From angle";
+                    clicked => {
+                        root.contextual_text = "Enter angle value in popup";
+                        angle-popup.show();
                     }
                 }
 
@@ -215,7 +234,7 @@ export component AppWindow inherits Window {
                 Button {
                     text: "Define m/px";
                     clicked => {
-                        root.contextual_text = "Not implemented yet";
+                        m_per_px_popup.show();
                     }
                 }
 
@@ -307,6 +326,162 @@ export component AppWindow inherits Window {
             vertical-stretch: 0;
             height: 40px;
             text: contextual_text;
+        }
+    }
+
+    angle_popup := PopupWindow {
+        width: 250px;
+        height: 150px;
+        x: root.width / 2 - self.width / 2;
+        y: root.height / 2 - self.height / 2;
+        close-on-click: false;
+        Rectangle {
+            width: parent.width;
+            height: parent.height;
+            background: grey;
+            border_radius: 3px;
+            border_width: 1px;
+            border_color: black;
+            clip: true;
+        }
+
+        VerticalBox {
+            HorizontalBox {
+                alignment: LayoutAlignment.center;
+                Text {
+                    width: 40px;
+                    text: "Angle: ";
+                }
+
+                LineEdit {
+                    width: 40px;
+                    text: root.angle;
+                    input-type: InputType.decimal;
+                    edited(value) => {
+                        root.angle = value.to-float();
+                    }
+                }
+
+                Text {
+                    width: 20px;
+                    text: "°";
+                }
+            }
+
+            HorizontalBox {
+                StandardButton {
+                    kind: ok;
+                    clicked => {
+                        root.contextual_text = "Click on a point the lines will go through";
+                        root.current_action = 26;
+                        angle_popup.close();
+                    }
+                }
+            }
+        }
+    }
+
+    m_per_px_popup := PopupWindow {
+        width: 250px;
+        height: 150px;
+        x: root.width / 2 - self.width / 2;
+        y: root.height / 2 - self.height / 2;
+        close-on-click: false;
+        Rectangle {
+            width: parent.width;
+            height: parent.height;
+            background: grey;
+            border_radius: 3px;
+            border_width: 1px;
+            border_color: black;
+            clip: true;
+        }
+
+        VerticalBox {
+            HorizontalBox {
+                alignment: LayoutAlignment.center;
+
+                Text {
+                    width: 40px;
+                    text: "Ratio: ";
+                }
+
+                LineEdit {
+                    width: 40px;
+                    text: root.m_per_px;
+                    input-type: InputType.decimal;
+                    edited(value) => {
+                        root.m_per_px = value.to-float();
+                    }
+                }
+
+                Text {
+                    width: 20px;
+                    text: "meters per pixel";
+                }
+            }
+
+            HorizontalBox {
+                StandardButton {
+                    kind: ok;
+                    clicked => {
+                        m_per_px_popup.close();
+                    }
+                }
+            }
+        }
+    }
+
+    radius_popup := PopupWindow {
+        width: 250px;
+        height: 150px;
+        x: root.width / 2 - self.width / 2;
+        y: root.height / 2 - self.height / 2;
+        close-on-click: false;
+        Rectangle {
+            width: parent.width;
+            height: parent.height;
+            background: grey;
+            border_radius: 3px;
+            border_width: 1px;
+            border_color: black;
+            clip: true;
+        }
+
+        VerticalBox {
+            HorizontalBox {
+                alignment: LayoutAlignment.center;
+
+                Text {
+                    width: 40px;
+                    text: "Radius: ";
+                }
+
+                LineEdit {
+                    width: 40px;
+                    text: root.radius;
+                    input-type: InputType.decimal;
+                    edited(value) => {
+                        root.radius = value.to-float();
+                    }
+                }
+
+                Text {
+                    width: 20px;
+                    text: "km";
+                }
+            }
+
+            HorizontalBox {
+                StandardButton {
+                    kind: ok;
+                    clicked => {
+                        root.contextual_text = "Click on the circle center";
+                        root.current_action = 30;
+                        radius_popup.close();
+                    }
+                }
+            }
         }
     }
 
