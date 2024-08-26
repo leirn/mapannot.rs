@@ -2,13 +2,9 @@ import { Button, VerticalBox, HorizontalBox, StandardListView, Slider, LineEdit,
 
 export component AppWindow inherits Window {
     title: "Map Annontation in Rust";
-
     preferred-height: 1024px;
     preferred-width: 1280px;
-
-
     icon: @image-url("icons/icon_256.png");
-
     in-out property <int> current_action: 0;
     in-out property <string> contextual_text: "Welcome";
     in-out property <int> mouse_x: 42;
@@ -28,16 +24,8 @@ export component AppWindow inherits Window {
     in-out property <image> overlay_image;
     in-out property <float> m_per_px: 170;
     in-out property <float> radius: 185;
-    in-out property <[StandardListViewItem]> item_list: [
-        { text: "Blue" },
-        { text: "Red" },
-        { text: "Green" },
-        { text: "Yellow" },
-        { text: "Black" },
-        { text: "White" },
-        { text: "Magenta" },
-        { text: "Cyan" },
-    ];
+    in-out property <float> viewport_zoom:1;
+    in-out property <[StandardListViewItem]> item_list: [];
     callback update_image();
     callback image_click();
     VerticalBox {
@@ -84,16 +72,10 @@ export component AppWindow inherits Window {
                 }
 
                 Button {
-                    text: "Cercle-deux-points";
+                    text: "Three edge points";
                     clicked => {
-                        root.contextual_text = "Not implemented yet";
-                    }
-                }
-
-                Button {
-                    text: "Cercle-trois-points";
-                    clicked => {
-                        root.contextual_text = "Not implemented yet";
+                        root.contextual_text = "Click on the first point";
+                        root.current_action = 31;
                     }
                 }
 
@@ -302,6 +284,8 @@ export component AppWindow inherits Window {
                                 parent.width = max(parent.width / 1.1, scroll.visible-width);
                                 parent.height = max(parent.height / 1.1, scroll.visible-height);
                             }
+                            root.viewport_zoom = map.width * 1px / parent.width;
+                            root.update_image();
                             return EventResult.accept;
                         }
                     }
@@ -400,7 +384,6 @@ export component AppWindow inherits Window {
         VerticalBox {
             HorizontalBox {
                 alignment: LayoutAlignment.center;
-
                 Text {
                     width: 40px;
                     text: "Ratio: ";
@@ -451,7 +434,6 @@ export component AppWindow inherits Window {
         VerticalBox {
             HorizontalBox {
                 alignment: LayoutAlignment.center;
-
                 Text {
                     width: 40px;
                     text: "Radius: ";

@@ -11,8 +11,11 @@ slint::include_modules!();
 fn main() -> Result<(), slint::PlatformError> {
     env_logger::init();
 
-    let mut renderer = Renderer::new();
+    let mut renderer = Renderer::new("data/chouette/989.jpg");
+    let mut renderer_temp = renderer.clone();
+    renderer.add_layer("data/chouette/500.png", 1000, 3000, 0.8);
     let mut standing_point = Point { x: 0, y: 0 };
+    let mut standing_point_2 = Point { x: 0, y: 0 };
     let mut standing_drawable = None;
     let mut next_action = 0;
 
@@ -429,12 +432,37 @@ fn main() -> Result<(), slint::PlatformError> {
                     }, width);
                     "Circle added".to_string()
                 }
+                // First point for three point circle
+                31 => {
+                    standing_point = Point { x, y };
+                    next_action = 32;
+                    "Click on the second point".to_string()
+                }
+                // Second point for three point circle
+                32 => {
+                    standing_point_2 = Point { x, y };
+                    next_action = 33;
+                    "Click on the third point".to_string()
+                }
+                // Add the three point circle
+                33 => {
+                    next_action = 0;
+                    let mut circle = math::circle_from_three_points(standing_point, standing_point_2, Point { x, y });
+                    circle.color = Color {
+                        r: red,
+                        g: green,
+                        b: blue,
+                    };
+                    circle.width = width;
+                    renderer.add_drawable(circle);
+                    "Circle added".to_string()
+                }
                 _ => String::new(),
             };
             let d = renderer.get_drawables();
 
             ui.set_contextual_text(SharedString::from(contextual_text.as_str()));
-            if let Some(image) = renderer.render_overlay() {
+            if let Some(image) = renderer.render_overlay(ui.get_viewport_zoom()) {
                 ui.set_overlay_image(image);
             }
             ui.set_current_action(next_action);
@@ -457,10 +485,8 @@ fn main() -> Result<(), slint::PlatformError> {
         let _ = slint::invoke_from_event_loop(move || {
             log::debug!("Entering invoke_from_event_loop");
 
-            let mut renderer = Renderer::new();
             let ui_local_handle = handle_copy.unwrap();
-            renderer.force_render();
-            if let Some(image) = renderer.render_background() {
+            if let Some(image) = renderer_temp.render_background() {
                 ui_local_handle.set_map(image);
             }
         });

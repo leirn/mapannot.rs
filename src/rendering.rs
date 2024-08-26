@@ -1,7 +1,7 @@
 use slint::{Image, Rgba8Pixel, SharedPixelBuffer};
 
 use crate::math::{distance, find_line_extreme_coordinates};
-use log::warn;
+use log::{debug, warn};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum DrawableType {
@@ -60,6 +60,40 @@ impl IdGenerator {
     }
 }
 
+/// Implements a renderer for rendering images and drawables.
+///
+/// The `Renderer` struct provides methods for creating a new renderer, adding drawables, removing drawables,
+/// and rendering the background and overlay images.
+///
+/// # Examples
+///
+/// ```
+/// use mapannot::rendering::{Renderer, Drawable, DrawableType, Point, Color, Image};
+///
+/// // Create a new renderer
+/// let mut renderer = Renderer::new();
+///
+/// // Add a drawable to the renderer
+/// let drawable = Drawable {
+///     id: 1,
+///     object_type: DrawableType::Circle,
+///     point1: Point { x: 100, y: 200 },
+///     point2: Point { x: 150, y: 250 },
+///     color: Color { r: 255, g: 0, b: 0 },
+///     width: 2.0,
+/// };
+/// renderer.add_drawable(drawable);
+///
+/// // Render the background image
+/// let background_image = renderer.render_background();
+///
+/// // Render the overlay image
+/// let overlay_image = renderer.render_overlay(1.5);
+/// ```
+///
+/// # Safety
+///
+/// The `Renderer` struct uses unsafe code internally for manipulating pixel buffers and drawing images. It is the responsibility of the caller to ensure that the inputs are valid and that the renderer is used correctly.
 #[derive(Clone, Debug)]
 pub struct Renderer {
     drawables: Vec<Drawable>,
@@ -71,24 +105,12 @@ pub struct Renderer {
     layers: Vec<Layer>,
 }
 
+
 impl Renderer {
-    pub fn new() -> Renderer {
-        let image = image::open("data/chouette/500.png").unwrap();
-        let image = image.to_rgba8();
-        let image_width = image.width();
-        let image_height = image.height();
-        let image_data = image.into_raw();
-        let layer = Layer {
-            _image_height: image_height,
-            _image_width: image_width,
-            x: 1000,
-            y: 3000,
-            transparency: 0.8,
-            image_data,
-        };
+    pub fn new(background_file: &str) -> Renderer {
 
         // open image from disk and add to pixel buffer
-        let image = image::open("data/chouette/989.jpg").unwrap();
+        let image = image::open(background_file).unwrap();
         let image = image.to_rgba8();
         let image_width = image.width();
         let image_height = image.height();
@@ -115,19 +137,37 @@ impl Renderer {
         .unwrap();
         pixmap.draw_pixmap(0, 0, map_pixmap.as_ref(), &paint, Default::default(), None);
 
-        Renderer {
+        let mut renderer = Renderer {
             drawables: Vec::new(),
             entity_id_generator: IdGenerator::new(),
             image_height,
             image_width,
             pixel_buffer,
             to_be_rendered: false,
-            layers: vec![layer],
-        }
+            layers: vec![],
+        };
+        renderer
     }
 
     pub fn force_render(&mut self) {
         self.to_be_rendered = true;
+    }
+
+    pub fn add_layer(&mut self, file: &str, x: i32, y: i32, transparency: f32) {
+        let image = image::open(file).unwrap();
+        let image = image.to_rgba8();
+        let image_width = image.width();
+        let image_height = image.height();
+        let image_data = image.into_raw();
+        let layer = Layer {
+            _image_height: image_height,
+            _image_width: image_width,
+            x,
+            y,
+            transparency,
+            image_data,
+        };
+        self.layers.push(layer);
     }
 
     pub fn add_drawable(&mut self, mut drawable: Drawable) {
@@ -210,7 +250,8 @@ impl Renderer {
         Some(Image::from_rgba8_premultiplied(pixel_buffer))
     }
 
-    pub fn render_overlay(&mut self) -> Option<Image> {
+
+    pub fn render_overlay(&mut self, zoom: f32) -> Option<Image> {
         if !self.to_be_rendered {
             return None;
         }
@@ -240,7 +281,8 @@ impl Renderer {
             paint.set_color_rgba8(draw.color.r, draw.color.g, draw.color.b, 255);
             paint.anti_alias = true;
 
-            let stroke = tiny_skia::Stroke { width: draw.width, ..Default::default() };
+            debug!("Width: {}, zoom: {}", draw.width, zoom);
+            let stroke = tiny_skia::Stroke { width: draw.width * zoom, ..Default::default() };
 
             match draw.object_type {
                 DrawableType::Circle => {

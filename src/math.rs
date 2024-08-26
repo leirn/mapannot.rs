@@ -542,11 +542,11 @@ pub fn tangent_lines_to_circle(point: Point, circle: Drawable) -> Option<(Drawab
 
     let distance_to_center = distance(point, center);
 
-    if distance_to_center < radius as f32 {
+    if distance_to_center < radius  {
         return None;
     }
 
-    let angle = (radius as f32 / distance_to_center as f32).asin().to_degrees();
+    let angle = (radius / distance_to_center).asin().to_degrees();
 
     Some(get_lines_from_angles(
         Drawable {
@@ -563,4 +563,55 @@ pub fn tangent_lines_to_circle(point: Point, circle: Drawable) -> Option<(Drawab
         point,
         angle,
     ))
+}
+
+/// Compute circle center based on three edge points
+/// 
+/// # Arguments
+/// 
+/// * `p1` - The first point
+/// * `p2` - The second point
+/// * `p3` - The third point
+/// 
+/// # Returns
+/// 
+/// The circle center
+pub fn circle_center_from_three_points(p1: Point, p2: Point, p3: Point) -> Point {
+    let x1 = p1.x as f32;
+    let y1 = p1.y as f32;
+    let x2 = p2.x as f32;
+    let y2 = p2.y as f32;
+    let x3 = p3.x as f32;
+    let y3 = p3.y as f32;
+
+    let a = x2 - x1;
+    let b = y2 - y1;
+    let c = x3 - x1;
+    let d = y3 - y1;
+
+    let e = a * (x1 + x2) + b * (y1 + y2);
+    let f = c * (x1 + x3) + d * (y1 + y3);
+
+    let g = 2.0 * (a * (y3 - y2) - b * (x3 - x2));
+
+    let x = (d * e - b * f) / g;
+    let y = (a * f - c * e) / g;
+
+    Point {
+        x: x as i32,
+        y: y as i32,
+    }
+}
+
+pub fn circle_from_three_points(p1: Point, p2: Point, p3: Point) -> Drawable {
+    let center = circle_center_from_three_points(p1, p2, p3);
+
+    Drawable {
+        id: 0,
+        object_type: DrawableType::Circle,
+        point1: center,
+        point2: p1,
+        color: Color { r: 0, g: 0, b: 0 },
+        width: 1.0,
+    }
 }
