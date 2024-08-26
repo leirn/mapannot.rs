@@ -1,7 +1,7 @@
 import { Button, VerticalBox, HorizontalBox, StandardListView, Slider, LineEdit, StandardButton, ScrollView } from "std-widgets.slint";
 
 export component AppWindow inherits Window {
-    title: "Map Annontation in Rust";
+    title: "Map Annotation in Rust";
     preferred-height: 1024px;
     preferred-width: 1280px;
     icon: @image-url("icons/icon_256.png");
@@ -13,6 +13,7 @@ export component AppWindow inherits Window {
     in-out property <int> offset_y: 0;
     in-out property <int> source_clip_when_pressed_x: 0;
     in-out property <int> source_clip_when_pressed_y: 0;
+    in-out property <int> current_listview_drawable_item: -1;
     in-out property <bool> move: false;
     in-out property <float> stroke_red: 42;
     in-out property <float> stroke_green: 185;
@@ -292,10 +293,11 @@ export component AppWindow inherits Window {
                 }
             }
 
-            StandardListView {
+            drawable_list :=StandardListView {
                 // Right menu bar
                 width: 150px;
                 model: item_list;
+                current-item: root.current_listview_drawable_item;
             }
         }
 

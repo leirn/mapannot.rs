@@ -22,6 +22,8 @@ fn main() -> Result<(), slint::PlatformError> {
     let ui = AppWindow::new()?;
     let ui_handle = ui.as_weak();
 
+    let mut selected_listview_item = None;
+
     ui.on_image_click({
         log::debug!("Entering on_image_click");
         let ui_handle = ui.as_weak();
@@ -39,12 +41,13 @@ fn main() -> Result<(), slint::PlatformError> {
             log::debug!("Current action: {}", ui.get_current_action());
 
             let contextual_text = match ui.get_current_action() {
-                // Get closest line
+                // Get closest object
                 0 => {
-                    let closest_line = math::closest_line(Point { x, y }, renderer.get_drawables());
-                    match closest_line {
-                        Some(line) => {
-                            let output = format!("{:?}", line);
+                    let closest_object = math::closest_object(Point { x, y }, renderer.get_drawables());
+                    match closest_object {
+                        Some(object) => {
+                            selected_listview_item = Some(object.id);
+                            let output = format!("{:?}", object);
                             output
                         }
                         None => "No line found".to_string(),
@@ -472,6 +475,10 @@ fn main() -> Result<(), slint::PlatformError> {
                 let s = format!("{} - {:?}", dd.id, dd.object_type);
                 let s = slint::StandardListViewItem::from(slint::SharedString::from(s.as_str()));
                 my_vec.push(s);
+                renderer.set_listview_id(dd.id, my_vec.len() as i32 - 1);
+                if selected_listview_item == Some(dd.id) {
+                    ui.set_current_listview_drawable_item(my_vec.len() as i32 - 1);
+                }
             }
             let model = slint::ModelRc::new(VecModel::from(my_vec));
             ui.set_item_list(model);
