@@ -2,6 +2,8 @@ import { Button, VerticalBox, HorizontalBox, StandardListView, Slider, LineEdit,
 
 export enum NextAction {
     None,
+    UpdateSelectedItem,
+    SelectObject,
     Vertical,
     Horizontal,
     Point,
@@ -75,6 +77,14 @@ export component AppWindow inherits Window {
                 vertical-stretch: 0;
                 width: 180px;
                 // Left menu bar
+                select := Button {
+                    text: "Select object";
+                    clicked => {
+                        root.contextual_text = "Click on an object to get information";
+                        root.current_action = NextAction.SelectObject;
+                    }
+                }
+
                 point := Button {
                     text: "Point";
                     clicked => {
@@ -337,6 +347,8 @@ export component AppWindow inherits Window {
                 current-item: root.current_listview_drawable_item;
                 current-item-changed(value) => {
                     root.current_listview_drawable_item = value;
+                    root.current_action = NextAction.UpdateSelectedItem;
+                    root.image_click();
                 }
             }
         }

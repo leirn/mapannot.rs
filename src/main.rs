@@ -41,16 +41,26 @@ fn main() -> Result<(), slint::PlatformError> {
             log::debug!("Current action: {:?}", ui.get_current_action());
 
             let contextual_text = match ui.get_current_action() {
+                NextAction::None => None,
                 // Get closest object
-                NextAction::None => {
-                    let closest_object = math::closest_object(Point { x, y }, renderer.get_drawables());
+                NextAction::UpdateSelectedItem => {
+                    selected_listview_item  = Some(ui.get_current_listview_drawable_item());
+                    renderer.discard_overlay();
+                    None
+                }
+                NextAction::SelectObject => {
+                    let closest_object =
+                        math::closest_object(Point { x, y }, renderer.get_drawables());
                     match closest_object {
                         Some(object) => {
+                            renderer.discard_overlay();
                             selected_listview_item = Some(object.id);
-                            let output = format!("{:?}", object);
-                            output
+                            Some(format!("{:?}", object))
                         }
-                        None => "No line found".to_string(),
+                        None => {
+                            selected_listview_item = None;
+                            Some("No line found".to_string())
+                        }
                     }
                 }
                 // Vertical line
@@ -66,7 +76,7 @@ fn main() -> Result<(), slint::PlatformError> {
                         },
                         width,
                     );
-                    "Vertical line added".to_string()
+                    Some("Vertical line added".to_string())
                 }
                 // Horizontal line
                 NextAction::Horizontal => {
@@ -81,7 +91,7 @@ fn main() -> Result<(), slint::PlatformError> {
                         },
                         width,
                     );
-                    "Horizontal line added".to_string()
+                    Some("Horizontal line added".to_string())
                 }
                 // Point
                 NextAction::Point => {
@@ -96,13 +106,13 @@ fn main() -> Result<(), slint::PlatformError> {
                         },
                         width,
                     );
-                    "Point added".to_string()
+                    Some("Point added".to_string())
                 }
                 // First segment point
                 NextAction::Segment => {
                     standing_point = Point { x, y };
                     next_action = NextAction::Segment2;
-                    "Click on the second segment point".to_string()
+                    Some("Click on the second segment point".to_string())
                 }
                 // Second segment point
                 NextAction::Segment2 => {
@@ -118,7 +128,7 @@ fn main() -> Result<(), slint::PlatformError> {
                         width,
                     );
                     next_action = NextAction::None;
-                    "Segment added".to_string()
+                    Some("Segment added".to_string())
                 }
                 // First angle computation line
                 NextAction::MeasureAngle => {
@@ -127,9 +137,9 @@ fn main() -> Result<(), slint::PlatformError> {
                         Some(line) => {
                             standing_drawable = Some(line);
                             next_action = NextAction::MeasureAngle2;
-                            "Click on the second line".to_string()
+                            Some("Click on the second line".to_string())
                         }
-                        None => "No line found".to_string(),
+                        None => Some("No line found".to_string()),
                     }
                 }
                 // Second angle computation line
@@ -140,23 +150,22 @@ fn main() -> Result<(), slint::PlatformError> {
                         Some(line) => {
                             let line1 = standing_drawable.unwrap();
                             let angle = math::angle_between(line1, line);
-                            let output: String = format!(
+                            Some(format!(
                                 "The angle between {} and {} is {:.2}° / {:.2}°",
                                 line1.id,
                                 line.id,
                                 angle.to_degrees().abs(),
                                 180. - angle.to_degrees().abs()
-                            );
-                            output
+                            ))
                         }
-                        None => "No line found".to_string(),
+                        None => Some("No line found".to_string()),
                     }
                 }
                 // First line point
                 NextAction::Line => {
                     standing_point = Point { x, y };
                     next_action = NextAction::Line2;
-                    "Click on the second line point".to_string()
+                    Some("Click on the second line point".to_string())
                 }
                 // Second line point
                 NextAction::Line2 => {
@@ -172,13 +181,13 @@ fn main() -> Result<(), slint::PlatformError> {
                         },
                         width,
                     );
-                    "Line added".to_string()
+                    Some("Line added".to_string())
                 }
                 // First half line point
                 NextAction::HalfLine => {
                     standing_point = Point { x, y };
                     next_action = NextAction::HalfLine2;
-                    "Click on the half broken line point".to_string()
+                    Some("Click on the half broken line point".to_string())
                 }
                 // Second half line point
                 NextAction::HalfLine2 => {
@@ -194,13 +203,13 @@ fn main() -> Result<(), slint::PlatformError> {
                         },
                         width,
                     );
-                    "Half line added".to_string()
+                    Some("Half line added".to_string())
                 }
                 // Circle center
                 NextAction::CenterAndEdge => {
                     standing_point = Point { x, y };
                     next_action = NextAction::CenterAndEdge2;
-                    "Click on any point on the circle".to_string()
+                    Some("Click on any point on the circle".to_string())
                 }
                 // Second circle point
                 NextAction::CenterAndEdge2 => {
@@ -216,7 +225,7 @@ fn main() -> Result<(), slint::PlatformError> {
                         },
                         width,
                     );
-                    "Circle added".to_string()
+                    Some("Circle added".to_string())
                 }
                 // Delete object
                 NextAction::Delete => {
@@ -226,16 +235,16 @@ fn main() -> Result<(), slint::PlatformError> {
                         Some(line) => {
                             // Remove line from drawables based on id
                             renderer.remove_drawable(line.id);
-                            "Object deleted".to_string()
+                            Some("Object deleted".to_string())
                         }
-                        None => "No object found".to_string(),
+                        None => Some("No object found".to_string()),
                     }
                 }
                 // First point to measure distance
                 NextAction::MeasureTwoPoints => {
                     standing_point = Point { x, y };
                     next_action = NextAction::MeasureTwoPoints2;
-                    "Click on the second point".to_string()
+                    Some("Click on the second point".to_string())
                 }
                 // Second point to measure distance
                 NextAction::MeasureTwoPoints2 => {
@@ -243,16 +252,17 @@ fn main() -> Result<(), slint::PlatformError> {
                     let m_per_px = ui.get_m_per_px();
                     let distance = math::distance(standing_point, Point { x, y });
                     debug!("Distance: {} px", distance);
-                    format!(
+                    Some(format!(
                         "Distance beetwen two points is {:.2} km or {:.1} px",
-                        distance * m_per_px / 1000., distance
-                    )
+                        distance * m_per_px / 1000.,
+                        distance
+                    ))
                 }
                 // Point to measure distance to line
                 NextAction::MeasurePointToLine => {
                     standing_point = Point { x, y };
                     next_action = NextAction::MeasurePointToLine2;
-                    "Click on the second point".to_string()
+                    Some("Click on the second point".to_string())
                 }
                 // Line to measure distance
                 NextAction::MeasurePointToLine2 => {
@@ -262,12 +272,12 @@ fn main() -> Result<(), slint::PlatformError> {
                     match closest_line {
                         Some(line) => {
                             let distance = math::perpendicular_distance(standing_point, line);
-                            format!(
+                            Some(format!(
                                 "Distance beetwen two points is {:.2} km",
                                 distance * m_per_px / 1000.
-                            )
+                            ))
                         }
-                        None => "No line found".to_string(),
+                        None => Some("No line found".to_string()),
                     }
                 }
                 // Circle radius
@@ -279,16 +289,19 @@ fn main() -> Result<(), slint::PlatformError> {
                     match closest_circle {
                         Some(circle) => {
                             let distance = math::distance(circle.point1, circle.point2);
-                            format!("The radius is {:.2} km", distance * m_per_px / 1000.)
+                            Some(format!(
+                                "The radius is {:.2} km",
+                                distance * m_per_px / 1000.
+                            ))
                         }
-                        None => "No line found".to_string(),
+                        None => Some("No line found".to_string()),
                     }
                 }
                 // Point the parallel line will go through
                 NextAction::Parallel => {
                     standing_point = Point { x, y };
                     next_action = NextAction::Parallel2;
-                    "Click on a line".to_string()
+                    Some("Click on a line".to_string())
                 }
                 // Line of reference for the parallel line
                 NextAction::Parallel2 => {
@@ -304,16 +317,16 @@ fn main() -> Result<(), slint::PlatformError> {
                             };
                             drawable.width = width;
                             renderer.add_drawable(drawable);
-                            "Parallel line added".to_string()
+                            Some("Parallel line added".to_string())
                         }
-                        None => "No line found".to_string(),
+                        None => Some("No line found".to_string()),
                     }
                 }
                 // First point for median
                 NextAction::TwoPointsMedian => {
                     standing_point = Point { x, y };
                     next_action = NextAction::TwoPointsMedian2;
-                    "Click on the second point".to_string()
+                    Some("Click on the second point".to_string())
                 }
                 // Second point for median
                 NextAction::TwoPointsMedian2 => {
@@ -326,13 +339,13 @@ fn main() -> Result<(), slint::PlatformError> {
                     };
                     drawable.width = width;
                     renderer.add_drawable(drawable);
-                    "Median line added".to_string()
+                    Some("Median line added".to_string())
                 }
                 // Point the perpendicular line will go through
                 NextAction::Perpendicular => {
                     standing_point = Point { x, y };
                     next_action = NextAction::Perpendicular2;
-                    "Click on a line".to_string()
+                    Some("Click on a line".to_string())
                 }
                 // Line of reference for the perpendicular line
                 NextAction::Perpendicular2 => {
@@ -349,16 +362,16 @@ fn main() -> Result<(), slint::PlatformError> {
                             };
                             drawable.width = width;
                             renderer.add_drawable(drawable);
-                            "Perpendicular line added".to_string()
+                            Some("Perpendicular line added".to_string())
                         }
-                        None => "No line found".to_string(),
+                        None => Some("No line found".to_string()),
                     }
                 }
                 // Point the new lines will go through, computed from given angle
                 NextAction::FromAngle => {
                     standing_point = Point { x, y };
                     next_action = NextAction::FromAngle2;
-                    "Click on a reference line".to_string()
+                    Some("Click on a reference line".to_string())
                 }
                 // Line of reference for the new lines, computed from given angle
                 NextAction::FromAngle2 => {
@@ -366,10 +379,13 @@ fn main() -> Result<(), slint::PlatformError> {
                     let closest_line = math::closest_line(Point { x, y }, renderer.get_drawables());
                     match closest_line {
                         Some(closest_line) => {
-                            let drawable =
-                                math::parallel_line(standing_point, closest_line);
+                            let drawable = math::parallel_line(standing_point, closest_line);
 
-                            let (mut line1, mut line2) = math::get_lines_from_angles(drawable, standing_point, ui.get_angle());
+                            let (mut line1, mut line2) = math::get_lines_from_angles(
+                                drawable,
+                                standing_point,
+                                ui.get_angle(),
+                            );
 
                             let color = Color {
                                 r: red,
@@ -383,74 +399,84 @@ fn main() -> Result<(), slint::PlatformError> {
                             line2.color = color;
                             line2.width = width;
                             renderer.add_drawable(line2);
-                            "Lines added".to_string()
+                            Some("Lines added".to_string())
                         }
-                        None => "No line found".to_string(),
+                        None => Some("No line found".to_string()),
                     }
                 }
                 // Point the tangent linse will go through
                 NextAction::Tangent => {
                     standing_point = Point { x, y };
                     next_action = NextAction::Tangent2;
-                    "Click on a line".to_string()
+                    Some("Click on a line".to_string())
                 }
                 // Circle of reference for the tangent lines
                 NextAction::Tangent2 => {
                     next_action = NextAction::None;
-                    let closest_circle = math::closest_circle(Point { x, y }, renderer.get_drawables());
+                    let closest_circle =
+                        math::closest_circle(Point { x, y }, renderer.get_drawables());
                     match closest_circle {
                         Some(closest_circle) => {
                             if let Some((mut tangent1, mut tangent2)) =
-                                math::tangent_lines_to_circle(standing_point, closest_circle) {                            
-                                    let color = Color {
-                                        r: red,
-                                        g: green,
-                                        b: blue,
-                                    };
-        
-                                    tangent1.color = color;
-                                    tangent1.width = width;
-                                    renderer.add_drawable(tangent1);
-                                    tangent2.color = color;
-                                    tangent2.width = width;
-                                    renderer.add_drawable(tangent2);
-                                    "Tangent lines added".to_string()
-                                }
-                                else {
-                                    "Selected point is inside the circle".to_string()
-                                }
-                            
+                                math::tangent_lines_to_circle(standing_point, closest_circle)
+                            {
+                                let color = Color {
+                                    r: red,
+                                    g: green,
+                                    b: blue,
+                                };
+
+                                tangent1.color = color;
+                                tangent1.width = width;
+                                renderer.add_drawable(tangent1);
+                                tangent2.color = color;
+                                tangent2.width = width;
+                                renderer.add_drawable(tangent2);
+                                Some("Tangent lines added".to_string())
+                            } else {
+                                Some("Selected point is inside the circle".to_string())
+                            }
                         }
-                        None => "No line found".to_string(),
+                        None => Some("No line found".to_string()),
                     }
                 }
                 // Circle with center and radius in km
                 NextAction::CircleRadiusLength => {
                     next_action = NextAction::None;
                     let radius = (ui.get_radius() / ui.get_m_per_px() * 1_000.) as i32;
-                    renderer.add_drawable_by_values(DrawableType::Circle, Point { x, y }, Point { x: x + radius, y }, Color {
-                        r: red,
-                        g: green,
-                        b: blue,
-                    }, width);
-                    "Circle added".to_string()
+                    renderer.add_drawable_by_values(
+                        DrawableType::Circle,
+                        Point { x, y },
+                        Point { x: x + radius, y },
+                        Color {
+                            r: red,
+                            g: green,
+                            b: blue,
+                        },
+                        width,
+                    );
+                    Some("Circle added".to_string())
                 }
                 // First point for three point circle
                 NextAction::CircleThreeEdgePoints => {
                     standing_point = Point { x, y };
                     next_action = NextAction::CircleThreeEdgePoints2;
-                    "Click on the second point".to_string()
+                    Some("Click on the second point".to_string())
                 }
                 // Second point for three point circle
                 NextAction::CircleThreeEdgePoints2 => {
                     standing_point_2 = Point { x, y };
                     next_action = NextAction::CircleThreeEdgePoints3;
-                    "Click on the third point".to_string()
+                    Some("Click on the third point".to_string())
                 }
                 // Add the three point circle
                 NextAction::CircleThreeEdgePoints3 => {
                     next_action = NextAction::None;
-                    let mut circle = math::circle_from_three_points(standing_point, standing_point_2, Point { x, y });
+                    let mut circle = math::circle_from_three_points(
+                        standing_point,
+                        standing_point_2,
+                        Point { x, y },
+                    );
                     circle.color = Color {
                         r: red,
                         g: green,
@@ -458,29 +484,35 @@ fn main() -> Result<(), slint::PlatformError> {
                     };
                     circle.width = width;
                     renderer.add_drawable(circle);
-                    "Circle added".to_string()
+                    Some("Circle added".to_string())
                 }
             };
+
             let d = renderer.get_drawables();
 
-            ui.set_contextual_text(SharedString::from(contextual_text.as_str()));
-            if let Some(image) = renderer.render_overlay(ui.get_viewport_zoom(), ui.get_current_listview_drawable_item()) {
-                ui.set_overlay_image(image);
-            }
-            ui.set_current_action(next_action);
             let mut my_vec = vec![];
-
             for dd in d {
                 let s = format!("{} - {:?}", dd.id, dd.object_type);
                 let s = slint::StandardListViewItem::from(slint::SharedString::from(s.as_str()));
                 my_vec.push(s);
                 renderer.set_listview_id(dd.id, my_vec.len() as i32 - 1);
-                if selected_listview_item == Some(dd.id) {
+                if selected_listview_item.is_some() && selected_listview_item.unwrap() == dd.id {
                     ui.set_current_listview_drawable_item(my_vec.len() as i32 - 1);
                 }
             }
             let model = slint::ModelRc::new(VecModel::from(my_vec));
             ui.set_item_list(model);
+
+            if contextual_text.is_some() {
+                ui.set_contextual_text(SharedString::from(contextual_text.unwrap().as_str()));
+            }
+            if let Some(image) = renderer.render_overlay(
+                ui.get_viewport_zoom(),
+                ui.get_current_listview_drawable_item(),
+            ) {
+                ui.set_overlay_image(image);
+            }
+            ui.set_current_action(next_action);
         }
     });
 

@@ -119,7 +119,7 @@ pub struct Renderer {
     bg_pixel_buffer: SharedPixelBuffer<Rgba8Pixel>,
     overlay_pixel_buffer: SharedPixelBuffer<Rgba8Pixel>,
     layers: Vec<Layer>,
-    discard_overlay: bool,
+    is_overlay_discarded: bool,
 }
 
 impl Renderer {
@@ -161,8 +161,12 @@ impl Renderer {
             bg_pixel_buffer,
             overlay_pixel_buffer,
             layers: vec![],
-            discard_overlay: true,
+            is_overlay_discarded: true,
         }
+    }
+
+    pub fn discard_overlay(&mut self) {
+        self.is_overlay_discarded = true;
     }
 
     /// Adds a layer to the map with the specified image file, position, and transparency.
@@ -219,7 +223,7 @@ impl Renderer {
     /// Removes a drawable object from the map by its identifier.
     pub fn remove_drawable(&mut self, id: i32) {
         self.drawables.retain(|d| d.id != id);
-        self.discard_overlay = true;
+        self.is_overlay_discarded = true;
     }
 
     /// Retrieve the list of drawables
@@ -285,7 +289,7 @@ impl Renderer {
     /// Generate the overlay image
     pub fn render_overlay(&mut self, zoom: f32, selected_item: i32) -> Option<Image> {
         log::debug!("Entering render overlay");
-        if !self.discard_overlay {
+        if !self.is_overlay_discarded {
             let mut already_rendered = true;
             for draw in self.drawables.iter() {
                 already_rendered &= draw.already_drawn;
@@ -303,7 +307,7 @@ impl Renderer {
         let mut pixmap =
             tiny_skia::PixmapMut::from_bytes(data, self.image_width, self.image_height).unwrap();
 
-        if self.discard_overlay {
+        if self.is_overlay_discarded {
             log::debug!("Discarding overlay");
             for draw in self.drawables.iter_mut() {
                 draw.already_drawn = false;
@@ -331,7 +335,7 @@ impl Renderer {
             let stroke = if selected_item == draw.listview_id {
                 tiny_skia::Stroke {
                     width: draw.width * zoom * 2.0,
-                    dash: tiny_skia::StrokeDash::new(vec![5.0, 5.0], 0.0),
+                    dash: tiny_skia::StrokeDash::new(vec![10.0, 7.0], 0.),
                     ..Default::default()
                 }
             } else {
@@ -399,7 +403,7 @@ impl Renderer {
                 }
             };
         }
-        self.discard_overlay = false;
+        self.is_overlay_discarded = false;
 
         log::debug!("End of rendering");
         Some(Image::from_rgba8_premultiplied(
