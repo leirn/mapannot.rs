@@ -13,7 +13,7 @@ fn main() -> Result<(), slint::PlatformError> {
 
     let mut renderer = Renderer::new("data/chouette/989.jpg");
     let mut renderer_temp = renderer.clone();
-    renderer.add_layer("data/chouette/500.png", 1000, 3000, 0.8);
+    //renderer.add_layer("data/chouette/500.png", 1000, 3000, 0.8);
     let mut standing_point = Point { x: 0, y: 0 };
     let mut standing_point_2 = Point { x: 0, y: 0 };
     let mut standing_drawable = None;
@@ -464,7 +464,7 @@ fn main() -> Result<(), slint::PlatformError> {
             let d = renderer.get_drawables();
 
             ui.set_contextual_text(SharedString::from(contextual_text.as_str()));
-            if let Some(image) = renderer.render_overlay(ui.get_viewport_zoom()) {
+            if let Some(image) = renderer.render_overlay(ui.get_viewport_zoom(), ui.get_current_listview_drawable_item()) {
                 ui.set_overlay_image(image);
             }
             ui.set_current_action(next_action);

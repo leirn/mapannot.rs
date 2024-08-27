@@ -283,7 +283,7 @@ impl Renderer {
     }
 
     /// Generate the overlay image
-    pub fn render_overlay(&mut self, zoom: f32) -> Option<Image> {
+    pub fn render_overlay(&mut self, zoom: f32, selected_item: i32) -> Option<Image> {
         log::debug!("Entering render overlay");
         if !self.discard_overlay {
             let mut already_rendered = true;
@@ -321,14 +321,24 @@ impl Renderer {
             draw.already_drawn = true;
 
             log::debug!("Draw {}", draw.id);
+
             let mut paint = tiny_skia::Paint::default();
             paint.set_color_rgba8(draw.color.r, draw.color.g, draw.color.b, 255);
             paint.anti_alias = true;
 
             debug!("Width: {}, zoom: {}", draw.width, zoom);
-            let stroke = tiny_skia::Stroke {
-                width: draw.width * zoom,
-                ..Default::default()
+
+            let stroke = if selected_item == draw.listview_id {
+                tiny_skia::Stroke {
+                    width: draw.width * zoom * 2.0,
+                    dash: tiny_skia::StrokeDash::new(vec![5.0, 5.0], 0.0),
+                    ..Default::default()
+                }
+            } else {
+                tiny_skia::Stroke {
+                    width: draw.width * zoom,
+                    ..Default::default()
+                }
             };
 
             match draw.object_type {
