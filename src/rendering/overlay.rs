@@ -8,7 +8,6 @@ use crate::utils::IdGenerator;
 use crate::OverlayDrawable;
 use log::debug;
 
-
 /// trait for circle
 pub trait Circle {
     fn center(&self) -> Point;
@@ -57,7 +56,6 @@ pub struct Drawable {
     pub listview_id: i32,
 }
 
-
 pub struct OverlayRenderer {
     drawables: Vec<Drawable>,
     pub drawable_images: Vec<OverlayDrawable>,
@@ -65,7 +63,7 @@ pub struct OverlayRenderer {
     image_height: u32,
     image_width: u32,
     is_overlay_discarded: bool,
-    width: f32,
+    stroke_width: f32,
     color: Color,
 }
 
@@ -78,7 +76,7 @@ impl OverlayRenderer {
             image_height,
             image_width,
             is_overlay_discarded: true,
-            width: 4.,
+            stroke_width: 4.,
             color: Color {
                 r: 42,
                 g: 0,
@@ -87,10 +85,12 @@ impl OverlayRenderer {
         }
     }
 
+    /// Set the width of the lines to be drawn
     pub fn set_width(&mut self, width: f32) {
-        self.width = width;
+        self.stroke_width = width;
     }
 
+    /// Set the color of the lines to be drawn
     pub fn set_color(&mut self, red: u8, green: u8, blue: u8) {
         self.color = Color {
             r: red,
@@ -103,6 +103,10 @@ impl OverlayRenderer {
         self.is_overlay_discarded = true;
     }
 
+    /// Add half line to the list of drawables
+    /// # Arguments
+    /// * `point1` - The first point of the half line
+    /// * `point2` - The second point of the half line
     pub fn add_half_line(&mut self, point1: Point, point2: Point) {
         let (point3, point4) = find_line_extreme_coordinates(
             point1,
@@ -120,6 +124,10 @@ impl OverlayRenderer {
         self.drawables.last_mut().unwrap().object_type = DrawableType::HalfLine;
     }
 
+    /// Add line to the list of drawables
+    /// # Arguments
+    /// * `point1` - The first point of the line
+    /// * `point2` - The second point of the line
     pub fn add_line(&mut self, point1: Point, point2: Point) {
         let (point1, point2) = find_line_extreme_coordinates(
             point1,
@@ -133,36 +141,41 @@ impl OverlayRenderer {
         self.drawables.last_mut().unwrap().object_type = DrawableType::Line;
     }
 
+    /// Add segment to the list of drawables
+    /// # Arguments
+    /// * `point1` - The first point of the segment
+    /// * `point2` - The second point of the segment
     pub fn add_segment(&mut self, point1: Point, point2: Point) {
-        let size_x = ((point1.x - point2.x).abs() as u32).max(self.width as u32);
-        let size_y = ((point1.y - point2.y).abs() as u32).max(self.width as u32);
-        let corner_x = point1.x.min(point2.x);
-        let corner_y = point1.y.min(point2.y);
+        let size_x = ((point1.x - point2.x).abs() as u32).max(self.stroke_width as u32);
+        let size_y = ((point1.y - point2.y).abs() as u32).max(self.stroke_width as u32);
+        let corner_x = (point1.x.min(point2.x) - (self.stroke_width / 2.) as i32).max(0);
+        let corner_y = (point1.y.min(point2.y) - (self.stroke_width / 2.) as i32).max(0);
 
-        let point1 = Point {
-            x: point1.x - corner_x,
-            y: point1.y - corner_y,
+        let local_point1 = Point {
+            x: point1.x - corner_x + (self.stroke_width / 2.) as i32,
+            y: point1.y - corner_y + (self.stroke_width / 2.) as i32,
         };
-        let point2 = Point {
+        let local_point2 = Point {
             x: point2.x - corner_x,
             y: point2.y - corner_y,
         };
 
         let mut pixel_buffer = SharedPixelBuffer::<Rgba8Pixel>::new(size_x, size_y);
         let mut pixmap =
-            tiny_skia::PixmapMut::from_bytes(pixel_buffer.make_mut_bytes(), size_x, size_y).unwrap();
+            tiny_skia::PixmapMut::from_bytes(pixel_buffer.make_mut_bytes(), size_x, size_y)
+                .unwrap();
 
         let mut paint = tiny_skia::Paint::default();
         paint.set_color_rgba8(self.color.r, self.color.g, self.color.b, 255);
         paint.anti_alias = true;
 
         let stroke = tiny_skia::Stroke {
-            width: self.width,
+            width: self.stroke_width,
             ..Default::default()
         };
         let mut pb = tiny_skia::PathBuilder::new();
-        pb.move_to(point1.x as f32, point1.y as f32);
-        pb.line_to(point2.x as f32, point2.y as f32);
+        pb.move_to(local_point1.x as f32, local_point1.y as f32);
+        pb.line_to(local_point2.x as f32, local_point2.y as f32);
         let path = pb.finish().unwrap();
         pixmap.stroke_path(&path, &paint, &stroke, Default::default(), None);
 
@@ -174,7 +187,7 @@ impl OverlayRenderer {
             point1,
             point2,
             color: self.color,
-            width: self.width,
+            width: self.stroke_width,
             ..Default::default()
         };
         self.drawables.push(d);
@@ -190,21 +203,29 @@ impl OverlayRenderer {
         debug!("x, y : {}, {}", corner_x, corner_y);
     }
 
+    /// Add circle to the list of drawables
+    /// # Arguments
+    /// * `center` - The center of the circle
+    /// * `radius` - The radius of the circle
     pub fn add_circle(&mut self, center: Point, radius: f32) {
-        let size = ((radius + self.width) * 2.) as u32;
+        let size = ((radius + self.stroke_width) * 2.) as u32;
         let mut pixel_buffer = SharedPixelBuffer::<Rgba8Pixel>::new(size, size);
 
         let mut pixmap =
             tiny_skia::PixmapMut::from_bytes(pixel_buffer.make_mut_bytes(), size, size).unwrap();
 
-        let path =
-            tiny_skia::PathBuilder::from_circle(radius + self.width, radius + self.width, radius).unwrap();
+        let path = tiny_skia::PathBuilder::from_circle(
+            radius + self.stroke_width,
+            radius + self.stroke_width,
+            radius,
+        )
+        .unwrap();
         let mut paint = tiny_skia::Paint::default();
         paint.set_color_rgba8(self.color.r, self.color.g, self.color.b, 255);
         paint.anti_alias = true;
 
         let stroke = tiny_skia::Stroke {
-            width: self.width,
+            width: self.stroke_width,
             ..Default::default()
         };
         pixmap.stroke_path(&path, &paint, &stroke, Default::default(), None);
@@ -220,37 +241,45 @@ impl OverlayRenderer {
                 y: center.y,
             },
             color: self.color,
-            width: self.width,
+            width: self.stroke_width,
             ..Default::default()
         };
         debug!("Adding circle  {:?}", d);
         debug!("Buffer size : {}", size);
-        debug!("x, y : {:.2}, {:.2}", center.x as f32 - radius - self.width, center.y as f32 - radius - self.width);
+        debug!(
+            "x, y : {:.2}, {:.2}",
+            center.x as f32 - radius - self.stroke_width,
+            center.y as f32 - radius - self.stroke_width
+        );
         self.drawables.push(d);
 
         self.drawable_images.push(OverlayDrawable {
             id,
             data: Image::from_rgba8_premultiplied(pixel_buffer),
-            x: center.x as f32 - radius - self.width,
-            y: center.y as f32 - radius - self.width,
+            x: center.x as f32 - radius - self.stroke_width,
+            y: center.y as f32 - radius - self.stroke_width,
         });
     }
 
+    /// Add point to the list of drawables
+    /// # Arguments
+    /// * `point` - The point to be added
     pub fn add_point(&mut self, point: Point) {
-        let size = (self.width * 2.) as u32;
+        let size = (self.stroke_width * 2.) as u32;
         let mut pixel_buffer = SharedPixelBuffer::<Rgba8Pixel>::new(size, size);
 
         let mut pixmap =
             tiny_skia::PixmapMut::from_bytes(pixel_buffer.make_mut_bytes(), size, size).unwrap();
 
-        let path = tiny_skia::PathBuilder::from_circle(point.x as f32, point.y as f32, self.width)
-            .unwrap();
+        let path =
+            tiny_skia::PathBuilder::from_circle(point.x as f32, point.y as f32, self.stroke_width)
+                .unwrap();
         let mut paint = tiny_skia::Paint::default();
         paint.set_color_rgba8(self.color.r, self.color.g, self.color.b, 255);
         paint.anti_alias = true;
 
         let stroke = tiny_skia::Stroke {
-            width: self.width,
+            width: self.stroke_width,
             ..Default::default()
         };
         pixmap.stroke_path(&path, &paint, &stroke, Default::default(), None);
@@ -263,7 +292,7 @@ impl OverlayRenderer {
             point1: point,
             point2: point,
             color: self.color,
-            width: self.width,
+            width: self.stroke_width,
             ..Default::default()
         };
         self.drawables.push(d);
@@ -271,12 +300,16 @@ impl OverlayRenderer {
         self.drawable_images.push(OverlayDrawable {
             id,
             data: Image::from_rgba8_premultiplied(pixel_buffer),
-            x: point.x as f32 - self.width,
-            y: point.y as f32 - self.width,
+            x: point.x as f32 - self.stroke_width,
+            y: point.y as f32 - self.stroke_width,
         });
         debug!("Adding point  {:?}", d);
         debug!("Buffer size : {}", size);
-        debug!("x, y : {:.2}, {:.2}", point.x as f32 - self.width, point.y as f32 - self.width);
+        debug!(
+            "x, y : {:.2}, {:.2}",
+            point.x as f32 - self.stroke_width,
+            point.y as f32 - self.stroke_width
+        );
     }
 
     /// Removes a drawable object from the map by its identifier.
