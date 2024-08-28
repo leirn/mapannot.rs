@@ -7,7 +7,7 @@ use std::{cell::RefCell, path::PathBuf, rc::Rc};
 
 use log::debug;
 use math::Point;
-use slint::{Model, SharedString, VecModel};
+use slint::{Model, SharedString, StandardListViewItem, VecModel};
 
 use rendering::{
     background::BackgroundRenderer,
@@ -29,7 +29,6 @@ fn main() -> Result<(), slint::PlatformError> {
     ));
 
     let layer_renderer = Rc::new(RefCell::new(LayerRenderer::new()));
-
 
     let layer_renderer2 = layer_renderer.clone();
 
@@ -63,7 +62,6 @@ fn main() -> Result<(), slint::PlatformError> {
         let files = fileselector::get_slint_files_from_folder(&path);
         file_selector.set_files(files);
 
-
         file_selector.on_send_ok({
             let ui_fs = file_selector_weak.unwrap();
             let ui = ui_handle.unwrap();
@@ -73,13 +71,9 @@ fn main() -> Result<(), slint::PlatformError> {
                 let parent_path = PathBuf::from(&parent_path);
                 let file = ui_fs.get_filename().to_string();
                 let image_path = parent_path.join(file);
-                layer_renderer3.borrow_mut().add_layer(
-                    image_path.to_str().unwrap(),
-                    0,
-                    0,
-                    1.,
-                    1.,
-                );
+                layer_renderer3
+                    .borrow_mut()
+                    .add_layer(image_path.to_str().unwrap(), 0, 0, 1., 1.);
 
                 let items = VecModel::from(
                     layer_renderer3
@@ -94,11 +88,27 @@ fn main() -> Result<(), slint::PlatformError> {
                             transparency: layer.transparency,
                             zoom: layer.zoom,
                             file: layer.file.clone(),
+                            name: layer.name.clone(),
                         })
                         .collect::<Vec<LayerDrawable>>(),
                 );
                 debug!("Layer items count: {}", items.row_count());
                 ui.set_layers(slint::ModelRc::new(items));
+
+                let layers_list = slint::VecModel::from(
+                    layer_renderer3
+                        .borrow()
+                        .layers
+                        .iter()
+                        .map(|layer| {
+                            slint::StandardListViewItem::from(slint::SharedString::from(
+                                layer.name.as_str(),
+                            ))
+                        })
+                        .collect::<Vec<StandardListViewItem>>(),
+                );
+    
+                ui.set_layers_list(slint::ModelRc::new(layers_list));
 
                 ui_fs.hide().unwrap();
             }
@@ -123,7 +133,7 @@ fn main() -> Result<(), slint::PlatformError> {
 
                 let parent_path = parent_path.to_str().unwrap();
 
-                ui_fs.set_path(SharedString::from(parent_path));  
+                ui_fs.set_path(SharedString::from(parent_path));
 
                 let files = fileselector::get_slint_files_from_folder(parent_path);
                 ui_fs.set_files(files);
@@ -584,11 +594,27 @@ fn main() -> Result<(), slint::PlatformError> {
                         transparency: layer.transparency,
                         zoom: layer.zoom,
                         file: layer.file.clone(),
+                        name: layer.name.clone(),
                     })
                     .collect::<Vec<LayerDrawable>>(),
             );
             debug!("Layer items count: {}", items.row_count());
             ui.set_layers(slint::ModelRc::new(items));
+
+            let layers_list = slint::VecModel::from(
+                layer_renderer4
+                    .borrow()
+                    .layers
+                    .iter()
+                    .map(|layer| {
+                        slint::StandardListViewItem::from(slint::SharedString::from(
+                            layer.name.as_str(),
+                        ))
+                    })
+                    .collect::<Vec<StandardListViewItem>>(),
+            );
+
+            ui.set_layers_list(slint::ModelRc::new(layers_list));
         }
     });
 

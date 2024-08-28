@@ -4,7 +4,7 @@ import {FileSelector} from "fileselector.slint";
 export {FileSelector}
 
 export struct OverlayDrawable { id: int, x: length, y: length, data: image}
-export struct LayerDrawable { id: int, x: length, y: length, data: image, zoom: float, transparency: float, file: string}
+export struct LayerDrawable { id: int, x: length, y: length, data: image, zoom: float, transparency: float, file: string, name: string}
 
 
 export enum NextAction {
@@ -72,6 +72,7 @@ export component AppWindow inherits Window {
     in-out property <float> radius: 185;
     in-out property <float> viewport_zoom:1;
     in-out property <[StandardListViewItem]> item_list: [];
+    in-out property <[StandardListViewItem]> layers_list: [];
 
     in-out property <[OverlayDrawable]> overlay_drawables: [];
     in-out property <[LayerDrawable]> layers: [];
@@ -374,6 +375,18 @@ export component AppWindow inherits Window {
                 // Right menu bar
                 width: 150px;
                 model: item_list;
+                current-item: root.current_listview_drawable_item;
+                current-item-changed(value) => {
+                    root.current_listview_drawable_item = value;
+                    root.current_action = NextAction.UpdateSelectedItem;
+                    root.image_click();
+                }
+            }
+
+            layer_list := StandardListView {
+                // Right menu bar
+                width: 150px;
+                model: layers_list;
                 current-item: root.current_listview_drawable_item;
                 current-item-changed(value) => {
                     root.current_listview_drawable_item = value;

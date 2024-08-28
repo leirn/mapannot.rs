@@ -10,6 +10,8 @@ pub struct LayerRenderer {
 
 impl LayerDrawable {
     pub fn new(id: i32, file: &str, x: i32, y: i32, transparency: f32, zoom: f32) -> LayerDrawable {
+        let path = std::path::Path::new(file);
+        let filename = path.file_name().unwrap().to_str().unwrap();
         let data = LayerDrawable::redraw(file, transparency);
         LayerDrawable {
             id,
@@ -19,6 +21,7 @@ impl LayerDrawable {
             data,
             transparency,
             file: SharedString::from(file),
+            name: SharedString::from(filename),
         }
     }
 
