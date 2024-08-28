@@ -1,7 +1,11 @@
 import { Button, VerticalBox, HorizontalBox, StandardListView, Slider, LineEdit, StandardButton, ScrollView } from "std-widgets.slint";
 
+import {FileSelector} from "fileselector.slint";
+export {FileSelector}
+
 export struct OverlayDrawable { id: int, x: length, y: length, data: image}
 export struct LayerDrawable { id: int, x: length, y: length, data: image, zoom: float, transparency: float, file: string}
+
 
 export enum NextAction {
     None,
@@ -74,6 +78,7 @@ export component AppWindow inherits Window {
 
     callback update_image();
     callback image_click();
+    callback show_fileselector();
     VerticalBox {
         height: 100%;
         HorizontalBox {
@@ -82,6 +87,13 @@ export component AppWindow inherits Window {
             VerticalBox {
                 vertical-stretch: 0;
                 width: 180px;
+                // Test import
+                import := Button {
+                    text: "Test import";
+                    clicked => {
+                        root.show_fileselector();
+                    }
+                }
                 // Left menu bar
                 select := Button {
                     text: "Select object";

@@ -1,16 +1,21 @@
+mod fileselector;
 mod math;
 mod rendering;
 mod utils;
 
-use std::cell::RefCell;
+use std::{cell::RefCell, path::PathBuf};
 
 use log::debug;
 use math::Point;
 use slint::{Model, SharedString, VecModel};
 
 use rendering::{
-    background::BackgroundRenderer, layer::LayerRenderer, overlay::{Circle, OverlayRenderer}
+    background::BackgroundRenderer,
+    layer::LayerRenderer,
+    overlay::{Circle, OverlayRenderer},
 };
+
+use std::env::current_dir;
 
 slint::include_modules!();
 
@@ -22,9 +27,11 @@ fn main() -> Result<(), slint::PlatformError> {
         bg_renderer.image_width,
         bg_renderer.image_height,
     ));
-    
+
     let layer_renderer = RefCell::new(LayerRenderer::new());
-    layer_renderer.borrow_mut().add_layer("data/chouette/500.png", 2000, 4000, 0.5, 2.);
+    layer_renderer
+        .borrow_mut()
+        .add_layer("data/chouette/500.png", 2000, 4000, 0.5, 2.);
     let mut standing_point = Point { x: 0, y: 0 };
     let mut standing_point_2 = Point { x: 0, y: 0 };
     let mut standing_drawable = None;
@@ -34,6 +41,74 @@ fn main() -> Result<(), slint::PlatformError> {
     let ui_handle = ui.as_weak();
 
     let mut selected_listview_item = None;
+
+    ui.on_show_fileselector(|| {
+        log::debug!("Entering on_show_fileselector");
+        let file_selector = FileSelector::new().unwrap();
+        file_selector.show().unwrap();
+        let file_selector_weak = file_selector.as_weak();
+
+        if file_selector.get_path().is_empty() {
+            file_selector.set_path(SharedString::from(current_dir().unwrap().to_str().unwrap()));
+        }
+
+        let path = file_selector.get_path().to_string();
+
+        let folders = fileselector::get_slint_folders_from_folder(&path);
+
+        file_selector.set_folders(folders);
+
+        let files = fileselector::get_slint_files_from_folder(&path);
+        file_selector.set_files(files);
+
+        file_selector.on_send_ok({
+            let ui_fs = file_selector_weak.unwrap();
+            move || {
+                ui_fs.hide().unwrap();
+            }
+        });
+
+        file_selector.on_send_cancel({
+            let ui_fs = file_selector_weak.unwrap();
+            move || {
+                ui_fs.hide().unwrap();
+            }
+        });
+
+        file_selector.on_set_folder({
+            let ui_fs = file_selector_weak.unwrap();
+            move || {
+                let parent_path = ui_fs.get_path().to_string();
+                let parent_path = PathBuf::from(&parent_path);
+                let child_path = ui_fs.get_current_folder().to_string();
+
+                let parent_path = parent_path.join(child_path);
+                let parent_path = parent_path.canonicalize().unwrap();
+
+                let parent_path = parent_path.to_str().unwrap();
+
+                ui_fs.set_path(SharedString::from(parent_path));  
+
+                let files = fileselector::get_slint_files_from_folder(parent_path);
+                ui_fs.set_files(files);
+
+                let folders = fileselector::get_slint_folders_from_folder(parent_path);
+                ui_fs.set_folders(folders);
+            }
+        });
+
+        file_selector.on_load_preview({
+            let ui_fs = file_selector_weak.unwrap();
+            move || {
+                let parent_path = ui_fs.get_path().to_string();
+                let parent_path = PathBuf::from(&parent_path);
+                let file = ui_fs.get_filename().to_string();
+                let image_path = parent_path.join(file);
+                let image = slint::Image::load_from_path(image_path.as_path()).unwrap();
+                ui_fs.set_preview(image);
+            }
+        });
+    });
 
     ui.on_image_click({
         log::debug!("Entering on_image_click");
@@ -169,9 +244,9 @@ fn main() -> Result<(), slint::PlatformError> {
                 // Second half line point
                 NextAction::HalfLine2 => {
                     next_action = NextAction::None;
-                    renderer.borrow_mut().add_half_line(
-                        standing_point,
-                        Point { x, y });
+                    renderer
+                        .borrow_mut()
+                        .add_half_line(standing_point, Point { x, y });
                     Some("Half line added".to_string())
                 }
                 // Circle center
