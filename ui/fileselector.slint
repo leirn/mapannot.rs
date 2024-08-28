@@ -1,0 +1,84 @@
+import { VerticalBox, HorizontalBox,StandardButton, StandardTableView, StandardListView} from "std-widgets.slint";
+
+export component FileSelector inherits Dialog {
+    title: "Select a file";
+    preferred-width: 700px;
+    in-out property <string> path;
+    in-out property <string> current_folder;
+    in-out property <string> filename;
+    in-out property <image> preview;
+    in-out property <[[StandardListViewItem]]> files: [
+        [{ text: "File1" }, { text: "3KiB" }, { text: "PNG Image" }],
+        [{ text: "File2" }, { text: "15KiB" }, { text: "Jpeg Image" }],
+        [{ text: "File3" }, { text: "16KiB" }, { text: "Jpeg Image" }]
+    ];
+    in-out property <[StandardListViewItem]> folders: [{text: ".."}, {text:"Folder1"}, {text: "Fodler2"}];
+    callback set_path();
+    callback load_preview();
+    callback set_folder();
+    callback get_to_parent_folder();
+    callback send_ok();
+    callback send_cancel();
+    VerticalBox {
+        HorizontalLayout {
+            Text {
+                text: "Current path:";
+            }
+
+            TextInput {
+                text: root.path;
+            }
+        }
+
+        HorizontalBox {
+            folder_list := StandardListView {
+                width: 100px;
+                height: 400px;
+                model: folders;
+                current-item-changed(value) => {
+                    folder-list.model[value].text;
+                    root.current_folder = folder-list.model[value].text;
+                    set_folder();
+
+                }
+            }
+
+            file_list:= StandardTableView {
+                columns: [
+                    { title: "Name", width: 200px },
+                    { title: "Size", width: 100px },
+                    { title: "Type", width: 100px }
+                ];
+                rows: files;
+                current-row-changed(value) => {
+                    root.filename = file-list.rows[value][0].text;
+                    load_preview();
+
+                }
+            }
+
+            preview_image:= Image {
+                image-fit: ImageFit.contain;
+                width: 300px;
+                height: 400px;
+                source: root.preview;
+            }
+        }
+
+        HorizontalBox {
+            StandardButton {
+                kind: ok;
+                clicked => {
+                    root.send_ok();
+                }
+            }
+
+            StandardButton {
+                kind: cancel;
+                clicked => {
+                    root.send_cancel();
+                }
+            }
+        }
+    }
+}
