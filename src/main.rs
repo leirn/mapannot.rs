@@ -104,8 +104,14 @@ fn main() -> Result<(), slint::PlatformError> {
                 let parent_path = PathBuf::from(&parent_path);
                 let file = ui_fs.get_filename().to_string();
                 let image_path = parent_path.join(file);
-                let image = slint::Image::load_from_path(image_path.as_path()).unwrap();
-                ui_fs.set_preview(image);
+                match slint::Image::load_from_path(image_path.as_path()) {
+                    Ok(image) => {
+                        ui_fs.set_preview(image);
+                    }
+                    Err(e) => {
+                        log::warn!("Error loading image: {:?}", e);
+                    }
+                }
             }
         });
     });
