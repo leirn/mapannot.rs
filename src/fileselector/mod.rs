@@ -1,6 +1,6 @@
 use std::fs;
 
-use slint::{ModelRc, Rgb8Pixel, SharedPixelBuffer};
+use slint::ModelRc;
 
 /// Retrieve all image files from folder given as String
 /// Must also retrieve size of images and mime type

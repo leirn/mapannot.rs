@@ -3,7 +3,7 @@ mod math;
 mod rendering;
 mod utils;
 
-use std::{cell::RefCell, path::PathBuf};
+use std::{cell::RefCell, path::PathBuf, rc::Rc};
 
 use log::debug;
 use math::Point;
@@ -28,10 +28,11 @@ fn main() -> Result<(), slint::PlatformError> {
         bg_renderer.image_height,
     ));
 
-    let layer_renderer = RefCell::new(LayerRenderer::new());
-    layer_renderer
-        .borrow_mut()
-        .add_layer("data/chouette/500.png", 2000, 4000, 0.5, 2.);
+    let layer_renderer = Rc::new(RefCell::new(LayerRenderer::new()));
+
+
+    let layer_renderer2 = layer_renderer.clone();
+
     let mut standing_point = Point { x: 0, y: 0 };
     let mut standing_point_2 = Point { x: 0, y: 0 };
     let mut standing_drawable = None;
@@ -39,10 +40,11 @@ fn main() -> Result<(), slint::PlatformError> {
 
     let ui = AppWindow::new()?;
     let ui_handle = ui.as_weak();
+    let ui_handle2 = ui_handle.clone();
 
     let mut selected_listview_item = None;
 
-    ui.on_show_fileselector(|| {
+    ui.on_show_fileselector(move || {
         log::debug!("Entering on_show_fileselector");
         let file_selector = FileSelector::new().unwrap();
         file_selector.show().unwrap();
@@ -61,9 +63,43 @@ fn main() -> Result<(), slint::PlatformError> {
         let files = fileselector::get_slint_files_from_folder(&path);
         file_selector.set_files(files);
 
+
         file_selector.on_send_ok({
             let ui_fs = file_selector_weak.unwrap();
+            let ui = ui_handle.unwrap();
+            let layer_renderer3 = layer_renderer2.clone();
             move || {
+                let parent_path = ui_fs.get_path().to_string();
+                let parent_path = PathBuf::from(&parent_path);
+                let file = ui_fs.get_filename().to_string();
+                let image_path = parent_path.join(file);
+                layer_renderer3.borrow_mut().add_layer(
+                    image_path.to_str().unwrap(),
+                    0,
+                    0,
+                    1.,
+                    1.,
+                );
+
+                let items = VecModel::from(
+                    layer_renderer3
+                        .borrow()
+                        .layers
+                        .iter()
+                        .map(|layer| LayerDrawable {
+                            id: layer.id,
+                            data: layer.data.clone(),
+                            x: layer.x,
+                            y: layer.y,
+                            transparency: layer.transparency,
+                            zoom: layer.zoom,
+                            file: layer.file.clone(),
+                        })
+                        .collect::<Vec<LayerDrawable>>(),
+                );
+                debug!("Layer items count: {}", items.row_count());
+                ui.set_layers(slint::ModelRc::new(items));
+
                 ui_fs.hide().unwrap();
             }
         });
@@ -120,6 +156,8 @@ fn main() -> Result<(), slint::PlatformError> {
         log::debug!("Entering on_image_click");
         let ui_handle = ui.as_weak();
         let ui = ui_handle.unwrap();
+
+        let layer_renderer4 = layer_renderer.clone();
 
         move || {
             let x = ui.get_mouse_x();
@@ -534,7 +572,7 @@ fn main() -> Result<(), slint::PlatformError> {
             ui.set_overlay_drawables(slint::ModelRc::new(items));
 
             let items = VecModel::from(
-                layer_renderer
+                layer_renderer4
                     .borrow()
                     .layers
                     .iter()
@@ -554,9 +592,10 @@ fn main() -> Result<(), slint::PlatformError> {
         }
     });
 
+    let ui_handle2 = ui_handle2.clone();
     let _thread = std::thread::spawn(move || {
         log::debug!("Entering thread");
-        let handle_copy = ui_handle.clone();
+        let handle_copy = ui_handle2.clone();
 
         let _ = slint::invoke_from_event_loop(move || {
             log::debug!("Entering invoke_from_event_loop");
