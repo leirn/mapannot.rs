@@ -40,8 +40,94 @@ fn main() -> Result<(), slint::PlatformError> {
     let ui = AppWindow::new()?;
     let ui_handle = ui.as_weak();
     let ui_handle2 = ui_handle.clone();
+    let ui_handle3 = ui_handle.clone();
 
     let mut selected_listview_item = None;
+
+
+    ui.on_show_fileselector_bg(move || {
+        log::debug!("Entering on_show_fileselector");
+        let file_selector_bg = FileSelector::new().unwrap();
+        file_selector_bg.show().unwrap();
+        let file_selector_weak = file_selector_bg.as_weak();
+
+        if file_selector_bg.get_path().is_empty() {
+            file_selector_bg.set_path(SharedString::from(current_dir().unwrap().to_str().unwrap()));
+        }
+
+        let path = file_selector_bg.get_path().to_string();
+
+        let folders = fileselector::get_slint_folders_from_folder(&path);
+
+        file_selector_bg.set_folders(folders);
+
+        let files = fileselector::get_slint_files_from_folder(&path);
+        file_selector_bg.set_files(files);
+
+        file_selector_bg.on_send_ok({
+            let ui_fs = file_selector_weak.unwrap();
+            let ui = ui_handle3.unwrap();
+            move || {
+                let parent_path = ui_fs.get_path().to_string();
+                let parent_path = PathBuf::from(&parent_path);
+                let file = ui_fs.get_filename().to_string();
+                let image_path = parent_path.join(file);
+
+                let mut renderer = BackgroundRenderer::new(image_path.to_str().unwrap());
+
+                ui.set_map(renderer.render_background().unwrap());
+
+                ui_fs.hide().unwrap();
+            }
+        });
+
+        file_selector_bg.on_send_cancel({
+            let ui_fs = file_selector_weak.unwrap();
+            move || {
+                ui_fs.hide().unwrap();
+            }
+        });
+
+        file_selector_bg.on_set_folder({
+            let ui_fs = file_selector_weak.unwrap();
+            move || {
+                let parent_path = ui_fs.get_path().to_string();
+                let parent_path = PathBuf::from(&parent_path);
+                let child_path = ui_fs.get_current_folder().to_string();
+
+                let parent_path = parent_path.join(child_path);
+                let parent_path = parent_path.canonicalize().unwrap();
+
+                let parent_path = parent_path.to_str().unwrap();
+
+                ui_fs.set_path(SharedString::from(parent_path));
+
+                let files_bg = fileselector::get_slint_files_from_folder(parent_path);
+                ui_fs.set_files(files_bg);
+
+                let folders_bg = fileselector::get_slint_folders_from_folder(parent_path);
+                ui_fs.set_folders(folders_bg);
+            }
+        });
+
+        file_selector_bg.on_load_preview({
+            let ui_fs = file_selector_weak.unwrap();
+            move || {
+                let parent_path = ui_fs.get_path().to_string();
+                let parent_path = PathBuf::from(&parent_path);
+                let file = ui_fs.get_filename().to_string();
+                let image_path = parent_path.join(file);
+                match slint::Image::load_from_path(image_path.as_path()) {
+                    Ok(image) => {
+                        ui_fs.set_preview(image);
+                    }
+                    Err(e) => {
+                        log::warn!("Error loading image: {:?}", e);
+                    }
+                }
+            }
+        });
+    });
 
     ui.on_show_fileselector(move || {
         log::debug!("Entering on_show_fileselector");

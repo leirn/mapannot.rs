@@ -81,6 +81,7 @@ export component AppWindow inherits Window {
     callback update_image();
     callback image_click();
     callback show_fileselector();
+    callback show_fileselector_bg();
     VerticalBox {
         height: 100%;
         HorizontalBox {
@@ -311,6 +312,11 @@ export component AppWindow inherits Window {
                 }
             }
 
+            Rectangle {
+                width: 1px;
+                background: white;
+            }
+
             scroll := ScrollView {
                 viewport-width: canva.width;
                 viewport-height: canva.height;
@@ -366,6 +372,11 @@ export component AppWindow inherits Window {
                 }
             }
 
+            Rectangle {
+                width: 1px;
+                background: white;
+            }
+
             drawable_list := StandardListView {
                 // Right menu bar
                 width: 150px;
@@ -377,8 +388,39 @@ export component AppWindow inherits Window {
                     root.image_click();
                 }
             }
+
+            Rectangle {
+                width: 1px;
+                background: white;
+            }
             VerticalBox {
                 width: 150px;
+                // Test import
+                load_bg := Button {
+                    text: "Load background";
+                    clicked => {
+                        root.show_fileselector_bg();
+                    }
+                }
+                
+                Text {
+                    text: "Meters per pixel";
+                }
+                SpinBox {
+                    minimum: 1;
+                    maximum: 1000;
+                    value : root.m_per_px;
+                    edited(value) => {
+                        root.m_per_px = value;
+                    }
+                }
+
+                Rectangle {
+                    width: 150px;
+                    height: 1px;
+                    background: white;
+                }
+
                 // Test import
                 import := Button {
                     text: "Add layer";
