@@ -327,7 +327,7 @@ export component AppWindow inherits Window {
                         y: layer.y / root.viewport_zoom;
                         width: layer.data.width * 1px / root.viewport_zoom * (layer.m_per_px / root.m_per_px);
                         height: layer.data.height * 1px / root.viewport_zoom * (layer.m_per_px / root.m_per_px);
-                       // opacity: layer.transparency;
+                        opacity: layer.transparency;
                     }
                     
                     for drawable in root.overlay_drawables: Image {
@@ -449,12 +449,12 @@ export component AppWindow inherits Window {
                 Text {
                     text: "Transparency";
                 }
-                SpinBox {
+                Slider {
                     minimum: 0;
-                    maximum: 100;
-                    value: root.layers[root.selected_layer].transparency * 100;
-                    edited(value) => {
-                        root.layers[root.selected_layer].transparency = value / 100;
+                    maximum: 1;
+                    value: root.layers[root.selected_layer].transparency;
+                    changed(value) => {
+                        root.layers[root.selected_layer].transparency = value;
                     }
                 }
                 Text {

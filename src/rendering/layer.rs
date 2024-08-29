@@ -75,8 +75,8 @@ impl LayerRenderer {
             file,
             x,
             y,
-            m_per_px,
             transparency,
+            m_per_px,
         );
         self.layers.push(layer);
     }
