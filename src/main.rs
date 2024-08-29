@@ -3,7 +3,11 @@ mod math;
 mod rendering;
 mod utils;
 
-use std::{cell::RefCell, path::PathBuf, rc::Rc};
+use std::{
+    cell::RefCell,
+    path::PathBuf,
+    rc::Rc,
+};
 
 use log::debug;
 use math::Point;
@@ -22,10 +26,7 @@ slint::include_modules!();
 fn main() -> Result<(), slint::PlatformError> {
     env_logger::builder().format_timestamp_millis().init();
 
-    let renderer = Rc::new(RefCell::new(OverlayRenderer::new(
-        1,
-        1,
-    )));
+    let renderer = Rc::new(RefCell::new(OverlayRenderer::new(1, 1)));
 
     let layer_renderer = Rc::new(RefCell::new(LayerRenderer::new()));
 
@@ -77,10 +78,9 @@ fn main() -> Result<(), slint::PlatformError> {
                 let mut renderer_bg = BackgroundRenderer::new(image_path.to_str().unwrap());
 
                 layer.borrow_mut().reset();
-                overlay.borrow_mut().reset(
-                    renderer_bg.image_height,
-                    renderer_bg.image_width
-                );
+                overlay
+                    .borrow_mut()
+                    .reset(renderer_bg.image_height, renderer_bg.image_width);
 
                 ui.set_map(renderer_bg.render_background().unwrap());
 
@@ -118,20 +118,32 @@ fn main() -> Result<(), slint::PlatformError> {
         });
 
         file_selector_bg.on_load_preview({
-            let ui_fs = file_selector_weak.unwrap();
+            let ui_fs = file_selector_weak.clone();
             move || {
-                let parent_path = ui_fs.get_path().to_string();
+                let ui = ui_fs.unwrap();
+                let parent_path = ui.get_path().to_string();
                 let parent_path = PathBuf::from(&parent_path);
-                let file = ui_fs.get_filename().to_string();
+                let file = ui.get_filename().to_string();
                 let image_path = parent_path.join(file);
-                match slint::Image::load_from_path(image_path.as_path()) {
-                    Ok(image) => {
-                        ui_fs.set_preview(image);
-                    }
-                    Err(e) => {
-                        log::warn!("Error loading image: {:?}", e);
-                    }
-                }
+                log::debug!("Entering clossure");
+                let ui_fs = ui_fs.clone();
+                let _thread = std::thread::spawn(move || {
+                    log::debug!("Entering thread");
+                    let _ = slint::invoke_from_event_loop(move || {
+                        log::debug!("Entering invoke_from_event_loop");
+                        let ui = ui_fs.unwrap();
+                        log::debug!("Doing it");
+                        match slint::Image::load_from_path(image_path.as_path()) {
+                            Ok(image) => {
+                                ui.set_preview(image);
+                                log::debug!("Loading preview image")
+                            }
+                            Err(e) => {
+                                log::warn!("Error loading image: {:?}", e);
+                            }
+                        }
+                    });
+                });
             }
         });
     });
@@ -242,20 +254,32 @@ fn main() -> Result<(), slint::PlatformError> {
         });
 
         file_selector.on_load_preview({
-            let ui_fs = file_selector_weak.unwrap();
+            let ui_fs = file_selector_weak.clone();
             move || {
-                let parent_path = ui_fs.get_path().to_string();
+                let ui = ui_fs.unwrap();
+                let parent_path = ui.get_path().to_string();
                 let parent_path = PathBuf::from(&parent_path);
-                let file = ui_fs.get_filename().to_string();
+                let file = ui.get_filename().to_string();
                 let image_path = parent_path.join(file);
-                match slint::Image::load_from_path(image_path.as_path()) {
-                    Ok(image) => {
-                        ui_fs.set_preview(image);
-                    }
-                    Err(e) => {
-                        log::warn!("Error loading image: {:?}", e);
-                    }
-                }
+                log::debug!("Entering clossure");
+                let ui_fs = ui_fs.clone();
+                let _thread = std::thread::spawn(move || {
+                    log::debug!("Entering thread");
+                    let _ = slint::invoke_from_event_loop(move || {
+                        log::debug!("Entering invoke_from_event_loop");
+                        let ui = ui_fs.unwrap();
+                        log::debug!("Doing it");
+                        match slint::Image::load_from_path(image_path.as_path()) {
+                            Ok(image) => {
+                                ui.set_preview(image);
+                                log::debug!("Loading preview image")
+                            }
+                            Err(e) => {
+                                log::warn!("Error loading image: {:?}", e);
+                            }
+                        }
+                    });
+                });
             }
         });
     });
