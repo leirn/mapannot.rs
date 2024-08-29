@@ -85,6 +85,15 @@ impl OverlayRenderer {
         }
     }
 
+    pub fn reset(&mut self, image_width: u32, image_height: u32) {
+        self.image_height = image_height;
+        self.image_width = image_width;
+        self.drawables = Vec::new();
+        self.drawable_images = Vec::new();
+        self.entity_id_generator = IdGenerator::new();
+        self.is_overlay_discarded = true;
+    }
+
     /// Set the width of the lines to be drawn
     pub fn set_width(&mut self, width: f32) {
         self.stroke_width = width;

@@ -22,15 +22,16 @@ slint::include_modules!();
 fn main() -> Result<(), slint::PlatformError> {
     env_logger::builder().format_timestamp_millis().init();
 
-    let mut bg_renderer = BackgroundRenderer::new("data/chouette/989.jpg");
-    let renderer = RefCell::new(OverlayRenderer::new(
-        bg_renderer.image_width,
-        bg_renderer.image_height,
-    ));
+    let renderer = Rc::new(RefCell::new(OverlayRenderer::new(
+        1,
+        1,
+    )));
 
     let layer_renderer = Rc::new(RefCell::new(LayerRenderer::new()));
 
     let layer_renderer2 = layer_renderer.clone();
+    let layer_renderer3 = layer_renderer.clone();
+    let overlay = renderer.clone();
 
     let mut standing_point = Point { x: 0, y: 0 };
     let mut standing_point_2 = Point { x: 0, y: 0 };
@@ -39,11 +40,9 @@ fn main() -> Result<(), slint::PlatformError> {
 
     let ui = AppWindow::new()?;
     let ui_handle = ui.as_weak();
-    let ui_handle2 = ui_handle.clone();
     let ui_handle3 = ui_handle.clone();
 
     let mut selected_listview_item = None;
-
 
     ui.on_show_fileselector_bg(move || {
         log::debug!("Entering on_show_fileselector");
@@ -67,15 +66,23 @@ fn main() -> Result<(), slint::PlatformError> {
         file_selector_bg.on_send_ok({
             let ui_fs = file_selector_weak.unwrap();
             let ui = ui_handle3.unwrap();
+            let overlay = overlay.clone();
+            let layer = layer_renderer3.clone();
             move || {
                 let parent_path = ui_fs.get_path().to_string();
                 let parent_path = PathBuf::from(&parent_path);
                 let file = ui_fs.get_filename().to_string();
                 let image_path = parent_path.join(file);
 
-                let mut renderer = BackgroundRenderer::new(image_path.to_str().unwrap());
+                let mut renderer_bg = BackgroundRenderer::new(image_path.to_str().unwrap());
 
-                ui.set_map(renderer.render_background().unwrap());
+                layer.borrow_mut().reset();
+                overlay.borrow_mut().reset(
+                    renderer_bg.image_height,
+                    renderer_bg.image_width
+                );
+
+                ui.set_map(renderer_bg.render_background().unwrap());
 
                 ui_fs.hide().unwrap();
             }
@@ -158,9 +165,13 @@ fn main() -> Result<(), slint::PlatformError> {
                 let file = ui_fs.get_filename().to_string();
                 let image_path = parent_path.join(file);
                 let m_per_px = ui.get_m_per_px();
-                layer_renderer3
-                    .borrow_mut()
-                    .add_layer(image_path.to_str().unwrap(), 0, 0, 1., m_per_px);
+                layer_renderer3.borrow_mut().add_layer(
+                    image_path.to_str().unwrap(),
+                    0,
+                    0,
+                    1.,
+                    m_per_px,
+                );
 
                 let items = VecModel::from(
                     layer_renderer3
@@ -194,7 +205,7 @@ fn main() -> Result<(), slint::PlatformError> {
                         })
                         .collect::<Vec<StandardListViewItem>>(),
                 );
-    
+
                 ui.set_layers_list(slint::ModelRc::new(layers_list));
 
                 ui_fs.hide().unwrap();
@@ -703,21 +714,6 @@ fn main() -> Result<(), slint::PlatformError> {
 
             ui.set_layers_list(slint::ModelRc::new(layers_list));
         }
-    });
-
-    let ui_handle2 = ui_handle2.clone();
-    let _thread = std::thread::spawn(move || {
-        log::debug!("Entering thread");
-        let handle_copy = ui_handle2.clone();
-
-        let _ = slint::invoke_from_event_loop(move || {
-            log::debug!("Entering invoke_from_event_loop");
-
-            let ui_local_handle = handle_copy.unwrap();
-            if let Some(image) = bg_renderer.render_background() {
-                ui_local_handle.set_map(image);
-            }
-        });
     });
 
     ui.run()

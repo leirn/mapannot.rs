@@ -63,6 +63,11 @@ impl LayerRenderer {
         }
     }
 
+    pub fn reset(&mut self) {
+        self.entity_id_generator = IdGenerator::new();
+        self.layers = vec![];
+    }
+
     /// Adds a layer to the map with the specified image file, position, and transparency.
     /// # Arguments
     /// * `file` - The path to the image file

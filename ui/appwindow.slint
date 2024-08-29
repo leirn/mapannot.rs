@@ -435,6 +435,7 @@ export component AppWindow inherits Window {
                     model: layers_list;
                     current-item: root.selected_layer;
                     current-item-changed(value) => {
+                        debug(value);
                         root.selected_layer = value;
                     }
                 }
