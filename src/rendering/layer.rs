@@ -9,7 +9,7 @@ pub struct LayerRenderer {
 }
 
 impl LayerDrawable {
-    pub fn new(id: i32, file: &str, x: i32, y: i32, transparency: f32, zoom: f32) -> LayerDrawable {
+    pub fn new(id: i32, file: &str, x: i32, y: i32, transparency: f32, m_per_px: f32) -> LayerDrawable {
         let path = std::path::Path::new(file);
         let filename = path.file_name().unwrap().to_str().unwrap();
         let data = LayerDrawable::redraw(file, transparency);
@@ -17,7 +17,7 @@ impl LayerDrawable {
             id,
             x: x as f32,
             y: y as f32,
-            zoom,
+            m_per_px,
             data,
             transparency,
             file: SharedString::from(file),
@@ -69,13 +69,13 @@ impl LayerRenderer {
     /// * `x` - The x-coordinate of the layer
     /// * `y` - The y-coordinate of the layer
     /// * `transparency` - The transparency of the layer
-    pub fn add_layer(&mut self, file: &str, x: i32, y: i32, transparency: f32, zoom: f32) {
+    pub fn add_layer(&mut self, file: &str, x: i32, y: i32, transparency: f32, m_per_px: f32) {
         let layer = LayerDrawable::new(
             self.entity_id_generator.get_id(),
             file,
             x,
             y,
-            zoom,
+            m_per_px,
             transparency,
         );
         self.layers.push(layer);

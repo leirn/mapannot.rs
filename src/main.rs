@@ -71,9 +71,10 @@ fn main() -> Result<(), slint::PlatformError> {
                 let parent_path = PathBuf::from(&parent_path);
                 let file = ui_fs.get_filename().to_string();
                 let image_path = parent_path.join(file);
+                let m_per_px = ui.get_m_per_px();
                 layer_renderer3
                     .borrow_mut()
-                    .add_layer(image_path.to_str().unwrap(), 0, 0, 1., 1.);
+                    .add_layer(image_path.to_str().unwrap(), 0, 0, 1., m_per_px);
 
                 let items = VecModel::from(
                     layer_renderer3
@@ -86,7 +87,7 @@ fn main() -> Result<(), slint::PlatformError> {
                             x: layer.x,
                             y: layer.y,
                             transparency: layer.transparency,
-                            zoom: layer.zoom,
+                            m_per_px: layer.m_per_px,
                             file: layer.file.clone(),
                             name: layer.name.clone(),
                         })
@@ -592,7 +593,7 @@ fn main() -> Result<(), slint::PlatformError> {
                         x: layer.x,
                         y: layer.y,
                         transparency: layer.transparency,
-                        zoom: layer.zoom,
+                        m_per_px: layer.m_per_px,
                         file: layer.file.clone(),
                         name: layer.name.clone(),
                     })

@@ -1,10 +1,10 @@
-import { Button, VerticalBox, HorizontalBox, StandardListView, Slider, LineEdit, StandardButton, ScrollView } from "std-widgets.slint";
+import { Button, VerticalBox, HorizontalBox, StandardListView, Slider, LineEdit, StandardButton, ScrollView, SpinBox } from "std-widgets.slint";
 
 import {FileSelector} from "fileselector.slint";
 export {FileSelector}
 
 export struct OverlayDrawable { id: int, x: length, y: length, data: image}
-export struct LayerDrawable { id: int, x: length, y: length, data: image, zoom: float, transparency: float, file: string, name: string}
+export struct LayerDrawable { id: int, x: length, y: length, data: image, m_per_px: float, transparency: float, file: string, name: string}
 
 
 export enum NextAction {
@@ -76,6 +76,7 @@ export component AppWindow inherits Window {
 
     in-out property <[OverlayDrawable]> overlay_drawables: [];
     in-out property <[LayerDrawable]> layers: [];
+    property <int> selected_layer;
 
     callback update_image();
     callback image_click();
@@ -88,13 +89,6 @@ export component AppWindow inherits Window {
             VerticalBox {
                 vertical-stretch: 0;
                 width: 180px;
-                // Test import
-                import := Button {
-                    text: "Add layer";
-                    clicked => {
-                        root.show_fileselector();
-                    }
-                }
                 // Left menu bar
                 select := Button {
                     text: "Select object";
@@ -329,10 +323,11 @@ export component AppWindow inherits Window {
                     
                     for layer in root.layers: Image {
                         source: layer.data;
-                        x: layer.x / root.viewport_zoom * layer.zoom;
-                        y: layer.y / root.viewport_zoom * layer.zoom;
-                        width: layer.data.width * 1px / root.viewport_zoom;
-                        height: layer.data.height * 1px / root.viewport_zoom;
+                        x: layer.x / root.viewport_zoom;
+                        y: layer.y / root.viewport_zoom;
+                        width: layer.data.width * 1px / root.viewport_zoom * (layer.m_per_px / root.m_per_px);
+                        height: layer.data.height * 1px / root.viewport_zoom * (layer.m_per_px / root.m_per_px);
+                       // opacity: layer.transparency;
                     }
                     
                     for drawable in root.overlay_drawables: Image {
@@ -382,16 +377,96 @@ export component AppWindow inherits Window {
                     root.image_click();
                 }
             }
-
-            layer_list := StandardListView {
-                // Right menu bar
+            VerticalBox {
                 width: 150px;
-                model: layers_list;
-                current-item: root.current_listview_drawable_item;
-                current-item-changed(value) => {
-                    root.current_listview_drawable_item = value;
-                    root.current_action = NextAction.UpdateSelectedItem;
-                    root.image_click();
+                // Test import
+                import := Button {
+                    text: "Add layer";
+                    clicked => {
+                        root.show_fileselector();
+                    }
+                }
+
+                layer_list := StandardListView {
+                    width: 150px;
+                    // Right menu bar
+                    model: layers_list;
+                    current-item: root.selected_layer;
+                    current-item-changed(value) => {
+                        root.selected_layer = value;
+                    }
+                }
+                Rectangle {
+                    width: 150px;
+                    height: 1px;
+                    background: white;
+                }
+                Text {
+                    text: "Position";
+                }
+                HorizontalBox {
+                    Text {
+                        text: "X:";
+                    }
+                    SpinBox {
+                        width: 100px;
+                        maximum: map.width;
+                        value: root.layers[root.selected_layer].x / 1px;
+                        edited(value) => {
+                            root.layers[root.selected_layer].x = value * 1px;
+                        }
+                    }
+                }
+                Slider {
+                    minimum: 0;
+                    maximum: map.width;
+                    value: root.layers[root.selected_layer].x / 1px;
+                    changed(value) => {
+                        root.layers[root.selected_layer].x = value * 1px;
+                    }
+                }
+                HorizontalBox {
+                    Text {
+                        text: "Y:";
+                    }
+                    SpinBox {
+                        width: 100px;
+                        maximum: map.width;
+                        value: root.layers[root.selected_layer].y / 1px;
+                        edited(value) => {
+                            root.layers[root.selected_layer].y = value * 1px;
+                        }
+                    }
+                }
+                Slider {
+                    minimum: 0;
+                    maximum: map.height;
+                    value: root.layers[root.selected_layer].y / 1px;
+                    changed(value) => {
+                        root.layers[root.selected_layer].y = value * 1px;
+                    }
+                }
+                Text {
+                    text: "Transparency";
+                }
+                SpinBox {
+                    minimum: 0;
+                    maximum: 100;
+                    value: root.layers[root.selected_layer].transparency * 100;
+                    edited(value) => {
+                        root.layers[root.selected_layer].transparency = value / 100;
+                    }
+                }
+                Text {
+                    text: "Meters per pixel";
+                }
+                SpinBox {
+                    minimum: 1;
+                    maximum: 1000;
+                    value : root.layers[root.selected_layer].m_per_px;
+                    edited(value) => {
+                        root.layers[root.selected_layer].m_per_px = value;
+                    }
                 }
             }
         }
