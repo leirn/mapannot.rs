@@ -2,6 +2,7 @@ use slint::{Image, Rgba8Pixel, SharedPixelBuffer};
 
 #[derive(Clone, Debug)]
 pub struct BackgroundRenderer {
+    pub filename: String,
     pub image_height: u32,
     pub image_width: u32,
     bg_pixel_buffer: SharedPixelBuffer<Rgba8Pixel>,
@@ -13,6 +14,7 @@ impl BackgroundRenderer {
         let image_data = slint::Image::load_from_path(std::path::Path::new(background_file)).unwrap();
 
         BackgroundRenderer {
+            filename: background_file.to_string(),
             image_height: image_data.size().height,
             image_width: image_data.size().height,
             bg_pixel_buffer :image_data.to_rgba8_premultiplied().unwrap(),

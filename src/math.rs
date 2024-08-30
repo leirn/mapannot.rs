@@ -1,7 +1,7 @@
 use log::debug;
 
 /// Represents a point in 2D space with x and y coordinates
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq,serde::Deserialize, serde::Serialize)]
 pub struct Point {
     pub x: i32,
     pub y: i32,

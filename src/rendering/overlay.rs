@@ -25,7 +25,7 @@ impl Circle for Drawable {
 }
 
 /// Represents the type of a drawable object that can be rendered on the map
-#[derive(Clone, Copy, Debug, PartialEq, Default)]
+#[derive(Clone, Copy, Debug, PartialEq, Default, serde::Deserialize, serde::Serialize)]
 pub enum DrawableType {
     #[default]
     Point,
@@ -36,7 +36,7 @@ pub enum DrawableType {
 }
 
 /// Represents a color with red, green, and blue components
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default, serde::Deserialize, serde::Serialize)]
 pub struct Color {
     pub r: u8,
     pub g: u8,

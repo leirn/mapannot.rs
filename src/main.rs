@@ -2,12 +2,10 @@ mod fileselector;
 mod math;
 mod rendering;
 mod utils;
+mod io;
 
 use std::{
-    cell::RefCell,
-    path::PathBuf,
-    process::{exit, ExitCode},
-    rc::Rc,
+    cell::RefCell, path::PathBuf, process::exit, rc::Rc
 };
 
 use log::debug;
@@ -51,11 +49,13 @@ fn main() -> Result<(), slint::PlatformError> {
 
     ui.on_load(|| {
         debug!("Stub to save project into file");
+        let project = io::Project::load_project("file.mrs").unwrap();
     });
 
     ui.on_save(|| {
         debug!("Stub to load project from file");
-        exit(0);
+        let mut project = io::Project::new("background.png", vec![], vec![]);
+        project.save_project("file.mrs").unwrap();
     });
 
     ui.on_close(|| {

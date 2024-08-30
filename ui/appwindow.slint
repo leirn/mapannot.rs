@@ -842,13 +842,23 @@ export component AppWindow inherits Window {
                 Text {
                     width: 200px;
                     height: 25px;
-                    text: "Open";
+                    text: "Open project";
+                    TouchArea {
+                        clicked => {
+                            root.load();
+                        }
+                    }
                 }
 
                 Text {
                     width: 200px;
                     height: 25px;
-                    text: "Save";
+                    text: "Save project";
+                    TouchArea {
+                        clicked => {
+                            root.save();
+                        }
+                    }
                 }
 
                 Rectangle {
