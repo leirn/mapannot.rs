@@ -1,12 +1,10 @@
 mod fileselector;
+mod io;
 mod math;
 mod rendering;
 mod utils;
-mod io;
 
-use std::{
-    cell::RefCell, path::PathBuf, process::exit, rc::Rc
-};
+use std::{cell::RefCell, path::PathBuf, process::exit, rc::Rc};
 
 use log::debug;
 use math::Point;
@@ -30,8 +28,6 @@ fn main() -> Result<(), slint::PlatformError> {
     let layer_renderer = Rc::new(RefCell::new(LayerRenderer::new()));
 
     let layer_renderer2 = layer_renderer.clone();
-    let layer_renderer3 = layer_renderer.clone();
-    let overlay = renderer.clone();
 
     let mut standing_point = Point { x: 0, y: 0 };
     let mut standing_point_2 = Point { x: 0, y: 0 };
@@ -45,16 +41,132 @@ fn main() -> Result<(), slint::PlatformError> {
 
     let mut selected_listview_item = None;
 
-
-
-    ui.on_load(|| {
-        debug!("Stub to save project into file");
+    let ui_handle_2 = ui_handle.clone();
+    let layer_renderer3 = layer_renderer.clone();
+    let overlay = renderer.clone();
+    ui.on_load(move || {
+        let ui = ui_handle_2.clone();
+        let ui = ui.unwrap();
+        debug!("Stub to load project into file");
         let project = io::Project::load_project("file.mrs").unwrap();
+        if !std::path::Path::new(project.background.as_str()).exists() {
+            ui.set_contextual_text(SharedString::from("Background file not found"));
+            return;
+        }
+        let mut renderer_bg = BackgroundRenderer::new(project.background.as_str());
+
+        let layer = layer_renderer3.clone();
+        layer.borrow_mut().reset();
+
+        for layer in project.layers {
+            layer_renderer3.borrow_mut().add_layer(
+                layer.file.as_str(),
+                layer.x as i32,
+                layer.y as i32,
+                layer.transparency,
+                layer.m_per_px,
+            );
+        }
+
+        let overlay = overlay.clone();
+        overlay
+            .borrow_mut()
+            .reset(renderer_bg.image_height, renderer_bg.image_width);
+
+        overlay.borrow_mut().restore_drawables(project.drawables);
+
+        ui.set_map(renderer_bg.render_background().unwrap());
+
+        let items = VecModel::from(
+            layer_renderer3
+                .borrow()
+                .layers
+                .iter()
+                .map(|layer| LayerDrawable {
+                    id: layer.id,
+                    data: layer.data.clone(),
+                    x: layer.x,
+                    y: layer.y,
+                    transparency: layer.transparency,
+                    m_per_px: layer.m_per_px,
+                    file: layer.file.clone(),
+                    name: layer.name.clone(),
+                })
+                .collect::<Vec<LayerDrawable>>(),
+        );
+        debug!("Layer items count: {}", items.row_count());
+        ui.set_layers(slint::ModelRc::new(items));
+
+        let layers_list = slint::VecModel::from(
+            layer_renderer3
+                .borrow()
+                .layers
+                .iter()
+                .map(|layer| {
+                    slint::StandardListViewItem::from(slint::SharedString::from(
+                        layer.name.as_str(),
+                    ))
+                })
+                .collect::<Vec<StandardListViewItem>>(),
+        );
+
+        ui.set_layers_list(slint::ModelRc::new(layers_list));
+
+        let mut my_vec = vec![];
+        let d = overlay.borrow_mut().drawables.clone();
+        for dd in d {
+            let s = format!("{} - {:?}", dd.id, dd.object_type);
+            let s = slint::StandardListViewItem::from(slint::SharedString::from(s.as_str()));
+            my_vec.push(s);
+            overlay
+                .borrow_mut()
+                .set_listview_id(dd.id, my_vec.len() as i32 - 1);
+            if selected_listview_item.is_some() && selected_listview_item.unwrap() == dd.id {
+                ui.set_current_listview_drawable_item(my_vec.len() as i32 - 1);
+            }
+        }
+        let model = slint::ModelRc::new(VecModel::from(my_vec));
+        ui.set_item_list(model);
+
+        ui.set_current_action(next_action);
+
+        let items = VecModel::from(
+            overlay
+                .borrow()
+                .drawable_images
+                .iter()
+                .map(|d| OverlayDrawable {
+                    id: d.id,
+                    data: d.data.clone(),
+                    x: d.x,
+                    y: d.y,
+                })
+                .collect::<Vec<OverlayDrawable>>(),
+        );
+        debug!("Overlay items count: {}", items.row_count());
+        ui.set_overlay_drawables(slint::ModelRc::new(items));
+
+        ui.set_contextual_text(SharedString::from("File loaded"));
     });
 
-    ui.on_save(|| {
-        debug!("Stub to load project from file");
-        let mut project = io::Project::new("background.png", vec![], vec![]);
+    let ui_handle_2 = ui_handle.clone();
+    let layer_renderer3 = layer_renderer.clone();
+    let overlay = renderer.clone();
+    ui.on_save(move || {
+        let ui = ui_handle_2.clone();
+        let ui = ui.unwrap();
+        debug!("Stub to save project from file");
+
+        let background_file = ui.get_background_file().to_string();
+
+        let layer = layer_renderer3.clone();
+        let overlay = overlay.clone();
+
+        let mut project = io::Project::new(
+            background_file.as_str(),
+            layer.borrow().layers.as_ref(),
+            overlay.borrow().drawables.as_ref(),
+        );
         project.save_project("file.mrs").unwrap();
     });
 
@@ -63,6 +175,8 @@ fn main() -> Result<(), slint::PlatformError> {
         exit(0);
     });
 
+    let overlay = renderer.clone();
+    let layer_renderer3 = layer_renderer.clone();
     ui.on_show_fileselector_bg(move || {
         log::debug!("Entering on_show_fileselector");
         let file_selector_bg = FileSelector::new().unwrap();
@@ -101,6 +215,8 @@ fn main() -> Result<(), slint::PlatformError> {
                     .reset(renderer_bg.image_height, renderer_bg.image_width);
 
                 ui.set_map(renderer_bg.render_background().unwrap());
+
+                ui.set_background_file(SharedString::from(image_path.to_str().unwrap()));
 
                 ui_fs.hide().unwrap();
             }

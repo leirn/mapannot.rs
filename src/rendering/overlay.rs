@@ -1,5 +1,6 @@
 use slint::{Image, Rgba8Pixel, SharedPixelBuffer};
 
+use crate::io::ProjectDrawable;
 use crate::math::{
     distance, distance_to_half_line, distance_to_segment, find_line_extreme_coordinates,
     perpendicular_distance, Point,
@@ -57,7 +58,7 @@ pub struct Drawable {
 }
 
 pub struct OverlayRenderer {
-    drawables: Vec<Drawable>,
+    pub drawables: Vec<Drawable>,
     pub drawable_images: Vec<OverlayDrawable>,
     entity_id_generator: IdGenerator,
     image_height: u32,
@@ -91,6 +92,37 @@ impl OverlayRenderer {
         self.drawables = Vec::new();
         self.drawable_images = Vec::new();
         self.entity_id_generator = IdGenerator::new();
+        self.is_overlay_discarded = true;
+    }
+
+    pub fn restore_drawables(&mut self, drawables: Vec<ProjectDrawable>) { 
+
+        self.drawables = Vec::new();
+        self.drawable_images = Vec::new();
+
+        for d in drawables {
+            // set width and color
+            self.set_width(d.width);
+            self.set_color(d.color.r, d.color.g, d.color.b);
+
+            match d.object_type {
+                DrawableType::Point => {
+                    self.add_point(d.point1);
+                }
+                DrawableType::Segment => {
+                    self.add_segment(d.point1, d.point2);
+                }
+                DrawableType::HalfLine => {
+                    self.add_half_line(d.point1, d.point2);
+                }
+                DrawableType::Line => {
+                    self.add_line(d.point1, d.point2);
+                }
+                DrawableType::Circle => {
+                    self.add_circle(d.point1, distance(d.point1, d.point2));
+                }
+            }
+        }
         self.is_overlay_discarded = true;
     }
 

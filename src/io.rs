@@ -1,4 +1,4 @@
-use std::io::{Read, Write, Error};
+use std::io::{Read, Error};
 use std::fs::File;
 use std::convert::From;
 
@@ -59,7 +59,7 @@ pub struct Project {
 }
 
 impl Project {
-    pub fn new(background: &str, layers: Vec<LayerDrawable>, drawables: Vec<Drawable>) -> Project {
+    pub fn new(background: &str, layers: &Vec<LayerDrawable>, drawables: &Vec<Drawable>) -> Project {
         Project {
             layers: layers.iter().map(|layer| ProjectLayer::from(layer.clone())).collect(),
             background: String::from(background),

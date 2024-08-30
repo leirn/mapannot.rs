@@ -4,7 +4,7 @@ use crate::{utils::IdGenerator, LayerDrawable};
 
 #[derive(Clone, Debug)]
 pub struct LayerRenderer {
-    entity_id_generator: IdGenerator,
+    pub entity_id_generator: IdGenerator,
     pub layers: Vec<LayerDrawable>,
 }
 
