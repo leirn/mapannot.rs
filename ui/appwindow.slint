@@ -46,6 +46,9 @@ export enum NextAction {
     CircleRadiusLength,
 }
 
+
+
+
 export component AppWindow inherits Window {
     title: "Map Annotation in Rust";
     preferred-height: 1024px;
@@ -73,17 +76,44 @@ export component AppWindow inherits Window {
     in-out property <float> viewport_zoom:1;
     in-out property <[StandardListViewItem]> item_list: [];
     in-out property <[StandardListViewItem]> layers_list: [];
-
     in-out property <[OverlayDrawable]> overlay_drawables: [];
     in-out property <[LayerDrawable]> layers: [];
     property <int> selected_layer;
-
     callback update_image();
     callback image_click();
     callback show_fileselector();
     callback show_fileselector_bg();
+    callback load();
+    callback save();
+    callback close();
     VerticalBox {
         height: 100%;
+        menubar := Rectangle {
+            height: 30px;
+            background: grey;
+            border-width: 0px;
+            HorizontalBox {
+                alignment:LayoutAlignment.start ;
+                file_button := Text {
+                    text: "File";
+                    TouchArea {
+                        clicked => {
+                            file-menu.show();
+                        }
+                    }
+                }
+
+                Text {
+                    text: "About";
+                    TouchArea {
+                        clicked => {
+                            about.show();
+                        }
+                    }
+                }
+            }
+        }
+
         HorizontalBox {
             vertical-stretch: 1;
             preferred-height: 100%;
@@ -326,7 +356,6 @@ export component AppWindow inherits Window {
                     height: map.height * 1px;
                     horizontal-tiling: ImageTiling.none;
                     vertical-tiling: ImageTiling.none;
-                    
                     for layer in root.layers: Image {
                         source: layer.data;
                         x: layer.x / root.viewport_zoom;
@@ -335,7 +364,6 @@ export component AppWindow inherits Window {
                         height: layer.data.height * 1px / root.viewport_zoom * (layer.m_per_px / root.m_per_px);
                         opacity: layer.transparency;
                     }
-                    
                     for drawable in root.overlay_drawables: Image {
                         source: drawable.data;
                         x: drawable.x / root.viewport_zoom;
@@ -343,7 +371,6 @@ export component AppWindow inherits Window {
                         width: drawable.data.width * 1px / root.viewport_zoom;
                         height: drawable.data.height * 1px / root.viewport_zoom;
                     }
-
                     area := TouchArea {
                         width: parent.width;
                         height: parent.height;
@@ -357,7 +384,6 @@ export component AppWindow inherits Window {
                                 return EventResult.reject;
                             }
                             if event.delta-y > 0 {
-
                                 parent.width = min(parent.width * 1.1, map.width * 1px);
                                 parent.height = min(parent.height * 1.1, map.height * 1px);
                             } else {
@@ -393,6 +419,7 @@ export component AppWindow inherits Window {
                 width: 1px;
                 background: white;
             }
+
             VerticalBox {
                 width: 150px;
                 // Test import
@@ -402,14 +429,15 @@ export component AppWindow inherits Window {
                         root.show_fileselector_bg();
                     }
                 }
-                
+
                 Text {
                     text: "Meters per pixel";
                 }
+
                 SpinBox {
                     minimum: 1;
                     maximum: 1000;
-                    value : root.m_per_px;
+                    value: root.m_per_px;
                     edited(value) => {
                         root.m_per_px = value;
                     }
@@ -439,18 +467,22 @@ export component AppWindow inherits Window {
                         root.selected_layer = value;
                     }
                 }
+
                 Rectangle {
                     width: 150px;
                     height: 1px;
                     background: white;
                 }
+
                 Text {
                     text: "Position";
                 }
+
                 HorizontalBox {
                     Text {
                         text: "X:";
                     }
+
                     SpinBox {
                         width: 100px;
                         maximum: map.width;
@@ -460,6 +492,7 @@ export component AppWindow inherits Window {
                         }
                     }
                 }
+
                 Slider {
                     minimum: 0;
                     maximum: map.width;
@@ -468,10 +501,12 @@ export component AppWindow inherits Window {
                         root.layers[root.selected_layer].x = value * 1px;
                     }
                 }
+
                 HorizontalBox {
                     Text {
                         text: "Y:";
                     }
+
                     SpinBox {
                         width: 100px;
                         maximum: map.width;
@@ -481,6 +516,7 @@ export component AppWindow inherits Window {
                         }
                     }
                 }
+
                 Slider {
                     minimum: 0;
                     maximum: map.height;
@@ -489,9 +525,11 @@ export component AppWindow inherits Window {
                         root.layers[root.selected_layer].y = value * 1px;
                     }
                 }
+
                 Text {
                     text: "Transparency";
                 }
+
                 Slider {
                     minimum: 0;
                     maximum: 1;
@@ -500,13 +538,15 @@ export component AppWindow inherits Window {
                         root.layers[root.selected_layer].transparency = value;
                     }
                 }
+
                 Text {
                     text: "Meters per pixel";
                 }
+
                 SpinBox {
                     minimum: 1;
                     maximum: 1000;
-                    value : root.layers[root.selected_layer].m_per_px;
+                    value: root.layers[root.selected_layer].m_per_px;
                     edited(value) => {
                         root.layers[root.selected_layer].m_per_px = value;
                     }
@@ -791,5 +831,59 @@ export component AppWindow inherits Window {
                 }
             }
         }
+    }
+
+    file_menu := PopupWindow {
+        x: file_button.x;
+        y: menubar.y + menubar.height;
+        Rectangle {
+            background: grey;
+            VerticalBox {
+                Text {
+                    width: 200px;
+                    height: 25px;
+                    text: "Open";
+                }
+
+                Text {
+                    width: 200px;
+                    height: 25px;
+                    text: "Save";
+                }
+                Rectangle {
+                    height: 1px;
+                    background: lightgrey;
+                }
+                Text {
+                    text: "Close";
+                    width: 200px;
+                    height: 25px;
+                    TouchArea {
+                        clicked => {
+                            root.close();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    about := PopupWindow {
+        x: (root.width + self.width) / 2;
+        y: (root.height + self.height) / 2;
+        Rectangle {
+            width: 400px;
+            height: 300px;
+            background: grey;
+            HorizontalLayout {
+                alignment: LayoutAlignment.center;
+                Image {
+                    source: @image-url("icons/icon_256.png");
+                }
+                Text {
+                    text: "Map Annotation in Rust\nVersion 0.1.0 alpha";
+                }
+            }
+    }
     }
 }

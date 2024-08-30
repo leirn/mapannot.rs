@@ -6,6 +6,7 @@ mod utils;
 use std::{
     cell::RefCell,
     path::PathBuf,
+    process::{exit, ExitCode},
     rc::Rc,
 };
 
@@ -39,11 +40,28 @@ fn main() -> Result<(), slint::PlatformError> {
     let mut standing_drawable = None;
     let mut next_action = NextAction::None;
 
-    let ui = AppWindow::new()?;
+    let ui: AppWindow = AppWindow::new()?;
     let ui_handle = ui.as_weak();
+    let ui_handle_maximised = ui_handle.clone();
     let ui_handle3 = ui_handle.clone();
 
     let mut selected_listview_item = None;
+
+
+
+    ui.on_load(|| {
+        debug!("Stub to save project into file");
+    });
+
+    ui.on_save(|| {
+        debug!("Stub to load project from file");
+        exit(0);
+    });
+
+    ui.on_close(|| {
+        debug!("Terminate application");
+        exit(0);
+    });
 
     ui.on_show_fileselector_bg(move || {
         log::debug!("Entering on_show_fileselector");
@@ -738,6 +756,16 @@ fn main() -> Result<(), slint::PlatformError> {
 
             ui.set_layers_list(slint::ModelRc::new(layers_list));
         }
+    });
+
+    let _thread = std::thread::spawn(move || {
+        let app_copy = ui_handle_maximised.clone();
+        //Expand the slint window from event loop
+        slint::invoke_from_event_loop(move || app_copy.unwrap().window().set_maximized(true))
+            .unwrap();
+
+        //Another code that we wanted to execute after the application was launched
+        //For example: hide the console window peculiar to slint
     });
 
     ui.run()
