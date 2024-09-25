@@ -3,8 +3,8 @@ use log::debug;
 /// Represents a point in 2D space with x and y coordinates
 #[derive(Clone, Copy, Debug, Default, PartialEq,serde::Deserialize, serde::Serialize)]
 pub struct Point {
-    pub x: i32,
-    pub y: i32,
+    pub x: f32,
+    pub y: f32,
 }
 
 /// Calculate the distance between two points
@@ -18,7 +18,7 @@ pub struct Point {
 ///
 /// The distance between the two points
 pub fn distance(p1: Point, p2: Point) -> f32 {
-    ((p1.x - p2.x).pow(2) as f32 + (p1.y - p2.y).pow(2) as f32).sqrt()
+    ((p1.x - p2.x).powf(2.0)  + (p1.y - p2.y).powf(2.0) ).sqrt()
 }
 
 /// Calculate the angle between two lines in radians
@@ -54,8 +54,8 @@ fn angle(p1: Point, p2: Point, p3: Point, p4: Point) -> f32 {
     let y1 = p2.y - p1.y;
     let x2 = p4.x - p3.x;
     let y2 = p4.y - p3.y;
-    let dot = (x1 * x2 + y1 * y2) as f32;
-    let det = (x1 * y2 - y1 * x2) as f32;
+    let dot = x1 * x2 + y1 * y2;
+    let det = x1 * y2 - y1 * x2;
     det.atan2(dot)
 }
 
@@ -71,12 +71,12 @@ fn angle(p1: Point, p2: Point, p3: Point, p4: Point) -> f32 {
 ///
 /// The perpendicular distance from the point to the line segment
 pub fn perpendicular_distance(p: Point, point1: Point, point2: Point) -> f32 {
-    let x0 = p.x as f32;
-    let y0 = p.y as f32;
-    let x1 = point1.x as f32;
-    let y1 = point1.y as f32;
-    let x2 = point2.x as f32;
-    let y2 = point2.y as f32;
+    let x0 = p.x ;
+    let y0 = p.y ;
+    let x1 = point1.x ;
+    let y1 = point1.y ;
+    let x2 = point2.x ;
+    let y2 = point2.y ;
 
     let num = ((y2 - y1) * x0 - (x2 - x1) * y0 + x2 * y1 - y2 * x1).abs();
     let den = ((y2 - y1).powi(2) + (x2 - x1).powi(2)).sqrt();
@@ -152,37 +152,37 @@ pub fn find_line_extreme_coordinates(
         return (
             Point {
                 x: p1.x,
-                y: y_min as i32,
+                y: y_min,
             },
             Point {
                 x: p1.x,
-                y: y_max as i32,
+                y: y_max ,
             },
         );
     }
-    let slope = (p2.y - p1.y) as f32 / (p2.x - p1.x) as f32;
-    let intercept = p1.y as f32 - slope * p1.x as f32;
+    let slope = (p2.y - p1.y)  / (p2.x - p1.x) ;
+    let intercept = p1.y  - slope * p1.x ;
 
     let mut points = Vec::new();
 
     // Intersection with y = y_min
-    if slope != 0. {
+    if slope != 0.0 {
         let x = (y_min - intercept) / slope;
         if x >= x_min && x <= x_max {
             points.push(Point {
-                x: x as i32,
-                y: y_min as i32,
+                x,
+                y: y_min,
             });
         }
     }
 
     // Intersection with y = y_max
-    if slope != 0. {
+    if slope != 0.0 {
         let x = (y_max - intercept) / slope;
         if x >= x_min && x <= x_max {
             points.push(Point {
-                x: x as i32,
-                y: y_max as i32,
+                x,
+                y: y_max ,
             });
         }
     }
@@ -191,8 +191,8 @@ pub fn find_line_extreme_coordinates(
     let y = slope * x_min + intercept;
     if y >= y_min && y <= y_max {
         points.push(Point {
-            x: x_min as i32,
-            y: y as i32,
+            x: x_min ,
+            y,
         });
     }
 
@@ -200,8 +200,8 @@ pub fn find_line_extreme_coordinates(
     let y = slope * x_max + intercept;
     if y >= y_min && y <= y_max {
         points.push(Point {
-            x: x_max as i32,
-            y: y as i32,
+            x: x_max ,
+            y,
         });
     }
 
@@ -226,16 +226,16 @@ pub fn find_line_extreme_coordinates(
 /// The coordinates of the line parallel to the given line and passing through the specific point
 pub fn parallel_line(point: Point, point1: Point, point2: Point) -> (Point, Point) {
     if point1.x == point2.x {
-        return (Point { x: point.x, y: 0 }, Point { x: point.x, y: 100 });
+        return (Point { x: point.x, y: 0.0 }, Point { x: point.x, y: 100.0 });
     }
 
-    let slope = (point2.y - point1.y) as f32 / (point2.x - point1.x) as f32;
-    let intercept = point.y as f32 - slope * point.x as f32;
+    let slope = (point2.y - point1.y)  / (point2.x - point1.x) ;
+    let intercept = point.y  - slope * point.x ;
 
-    let x1 = 0;
-    let y1 = (slope * x1 as f32 + intercept) as i32;
-    let x2 = 1000;
-    let y2 = (slope * x2 as f32 + intercept) as i32;
+    let x1 = 0.0;
+    let y1 = slope * x1  + intercept;
+    let x2 = 1000.0;
+    let y2 = slope * x2  + intercept;
 
     (Point { x: x1, y: y1 }, Point { x: x2, y: y2 })
 }
@@ -253,17 +253,17 @@ pub fn parallel_line(point: Point, point1: Point, point2: Point) -> (Point, Poin
 /// The coordinates of the line perpendicular to the given line and passing through the specific point
 pub fn perpendicular_line(point: Point, point1: Point, point2: Point) -> (Point, Point) {
     if point1.x == point2.x {
-        return (Point { x: point.x, y: 0 }, Point { x: point.x, y: 100 });
+        return (Point { x: point.x, y: 0.0 }, Point { x: point.x, y: 100.0 });
     }
 
-    let slope = (point2.y - point1.y) as f32 / (point2.x - point1.x) as f32;
+    let slope = (point2.y - point1.y)  / (point2.x - point1.x) ;
     let perpendicular_slope = -1. / slope;
-    let intercept = point.y as f32 - perpendicular_slope * point.x as f32;
+    let intercept = point.y  - perpendicular_slope * point.x ;
 
-    let x1 = 0;
-    let y1 = (perpendicular_slope * x1 as f32 + intercept) as i32;
-    let x2 = 1000;
-    let y2 = (perpendicular_slope * x2 as f32 + intercept) as i32;
+    let x1 = 0.0;
+    let y1 = perpendicular_slope * x1  + intercept;
+    let x2 = 1000.0;
+    let y2 = perpendicular_slope * x2  + intercept;
 
     (Point { x: x1, y: y1 }, Point { x: x2, y: y2 })
 }
@@ -279,8 +279,8 @@ pub fn perpendicular_line(point: Point, point1: Point, point2: Point) -> (Point,
 ///
 /// The median line between the two points
 pub fn median_line(p1: Point, p2: Point) -> (Point, Point) {
-    let x = (p1.x + p2.x) / 2;
-    let y = (p1.y + p2.y) / 2;
+    let x = (p1.x + p2.x) / 2.0;
+    let y = (p1.y + p2.y) / 2.0;
 
     (
         Point { x, y },
@@ -318,16 +318,16 @@ pub fn rotate_line(
         (point2.x, point2.y)
     };
 
-    let x1 = rotation_center.x as f32 - x as f32;
-    let y1 = rotation_center.y as f32 - y as f32;
+    let x1 = rotation_center.x  - x ;
+    let y1 = rotation_center.y  - y ;
 
     let x2 = x1 * angle.to_radians().cos() - y1 * angle.to_radians().sin();
     let y2 = x1 * angle.to_radians().sin() + y1 * angle.to_radians().cos();
 
     (
         Point {
-            x: rotation_center.x + x2 as i32,
-            y: rotation_center.y + y2 as i32,
+            x: rotation_center.x + x2,
+            y: rotation_center.y + y2,
         },
         Point {
             x: rotation_center.x,
@@ -386,7 +386,7 @@ pub fn tangent_lines_to_circle(
     Some(get_lines_from_angles(
         circle_center,
         Point {
-            x: circle_center.x + circle_radius as i32,
+            x: circle_center.x + circle_radius,
             y: circle_center.y,
         },
         point,
@@ -406,12 +406,12 @@ pub fn tangent_lines_to_circle(
 ///
 /// The circle center
 pub fn circle_center_from_three_points(p1: Point, p2: Point, p3: Point) -> Point {
-    let x1 = p1.x as f32;
-    let y1 = p1.y as f32;
-    let x2 = p2.x as f32;
-    let y2 = p2.y as f32;
-    let x3 = p3.x as f32;
-    let y3 = p3.y as f32;
+    let x1 = p1.x ;
+    let y1 = p1.y ;
+    let x2 = p2.x ;
+    let y2 = p2.y ;
+    let x3 = p3.x ;
+    let y3 = p3.y ;
 
     let a = x2 - x1;
     let b = y2 - y1;
@@ -427,8 +427,8 @@ pub fn circle_center_from_three_points(p1: Point, p2: Point, p3: Point) -> Point
     let y = (a * f - c * e) / g;
 
     Point {
-        x: x as i32,
-        y: y as i32,
+        x,
+        y,
     }
 }
 

@@ -29,8 +29,8 @@ fn main() -> Result<(), slint::PlatformError> {
 
     let layer_renderer2 = layer_renderer.clone();
 
-    let mut standing_point = Point { x: 0, y: 0 };
-    let mut standing_point_2 = Point { x: 0, y: 0 };
+    let mut standing_point = Point { x: 0.0, y: 0.0 };
+    let mut standing_point_2 = Point { x: 0.0, y: 0.0 };
     let mut standing_drawable = None;
     let mut next_action = NextAction::None;
 
@@ -426,8 +426,8 @@ fn main() -> Result<(), slint::PlatformError> {
         let layer_renderer4 = layer_renderer.clone();
 
         move || {
-            let x = ui.get_mouse_x();
-            let y = ui.get_mouse_y();
+            let x = ui.get_mouse_x() as f32;
+            let y = ui.get_mouse_y() as f32;
             let red = ui.get_stroke_red().round() as u8;
             let green = ui.get_stroke_green().round() as u8;
             let blue = ui.get_stroke_blue().round() as u8;
@@ -466,14 +466,14 @@ fn main() -> Result<(), slint::PlatformError> {
                 NextAction::Vertical => {
                     renderer
                         .borrow_mut()
-                        .add_line(Point { x, y: 0 }, Point { x, y: 480 });
+                        .add_line(Point { x, y: 0.0 }, Point { x, y: 480.0 });
                     Some("Vertical line added".to_string())
                 }
                 // Horizontal line
                 NextAction::Horizontal => {
                     renderer
                         .borrow_mut()
-                        .add_line(Point { x: 0, y }, Point { x: 640, y });
+                        .add_line(Point { x: 0.0, y }, Point { x: 640.0, y });
                     Some("Horizontal line added".to_string())
                 }
                 // Point
@@ -768,10 +768,8 @@ fn main() -> Result<(), slint::PlatformError> {
                 // Circle with center and radius in km
                 NextAction::CircleRadiusLength => {
                     next_action = NextAction::None;
-                    let radius = (ui.get_radius() / ui.get_m_per_px() * 1_000.) as i32;
-                    renderer
-                        .borrow_mut()
-                        .add_circle(Point { x, y }, radius as f32);
+                    let radius = ui.get_radius() / ui.get_m_per_px() * 1_000.;
+                    renderer.borrow_mut().add_circle(Point { x, y }, radius);
                     Some("Circle added".to_string())
                 }
                 // First point for three point circle

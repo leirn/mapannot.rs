@@ -189,12 +189,12 @@ impl OverlayRenderer {
     pub fn add_segment(&mut self, point1: Point, point2: Point) {
         let size_x = ((point1.x - point2.x).abs() as u32).max(self.stroke_width as u32);
         let size_y = ((point1.y - point2.y).abs() as u32).max(self.stroke_width as u32);
-        let corner_x = (point1.x.min(point2.x) - (self.stroke_width / 2.) as i32).max(0);
-        let corner_y = (point1.y.min(point2.y) - (self.stroke_width / 2.) as i32).max(0);
+        let corner_x = (point1.x.min(point2.x) - (self.stroke_width / 2.) ).max(0.);
+        let corner_y = (point1.y.min(point2.y) - (self.stroke_width / 2.) ).max(0.);
 
         let local_point1 = Point {
-            x: point1.x - corner_x + (self.stroke_width / 2.) as i32,
-            y: point1.y - corner_y + (self.stroke_width / 2.) as i32,
+            x: point1.x - corner_x + (self.stroke_width / 2.) ,
+            y: point1.y - corner_y + (self.stroke_width / 2.),
         };
         let local_point2 = Point {
             x: point2.x - corner_x,
@@ -278,7 +278,7 @@ impl OverlayRenderer {
             object_type: DrawableType::Circle,
             point1: center,
             point2: Point {
-                x: center.x + radius as i32,
+                x: center.x + radius,
                 y: center.y,
             },
             color: self.color,
@@ -289,8 +289,8 @@ impl OverlayRenderer {
         debug!("Buffer size : {}", size);
         debug!(
             "x, y : {:.2}, {:.2}",
-            center.x as f32 - radius - self.stroke_width,
-            center.y as f32 - radius - self.stroke_width
+            center.x  - radius - self.stroke_width,
+            center.y  - radius - self.stroke_width
         );
         self.drawables.push(d);
 
